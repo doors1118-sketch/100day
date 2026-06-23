@@ -1,0 +1,18 @@
+[Unit]
+Description=민생100일 지표 API
+After=network.target
+
+[Service]
+Type=simple
+User=minsaeng
+Group=minsaeng
+WorkingDirectory=/opt/minsaeng100
+Environment=MINSAENG100_HOME=/opt/minsaeng100
+Environment=MINSAENG100_DB=/opt/minsaeng100/data/minsaeng100.sqlite
+ExecStart=/opt/minsaeng100/venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8010
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

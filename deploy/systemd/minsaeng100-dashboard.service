@@ -1,0 +1,18 @@
+[Unit]
+Description=민생100일 지표 Streamlit Dashboard
+After=network.target minsaeng100-api.service
+
+[Service]
+Type=simple
+User=minsaeng
+Group=minsaeng
+WorkingDirectory=/opt/minsaeng100
+Environment=MINSAENG100_HOME=/opt/minsaeng100
+Environment=MINSAENG100_DB=/opt/minsaeng100/data/minsaeng100.sqlite
+ExecStart=/opt/minsaeng100/venv/bin/streamlit run dashboard/app.py --server.address 127.0.0.1 --server.port 8510 --server.headless true --server.baseUrlPath minsaeng100
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
