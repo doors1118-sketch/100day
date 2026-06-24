@@ -783,7 +783,7 @@ def make_manual_cards(credit_df: pd.DataFrame, policy_df: pd.DataFrame) -> list[
     if policy_df.empty:
         cards.append(
             Card(
-                title="부산 소상공인 특별자금 공급액",
+                title="부산 소상공인 특별자금 월별공급액",
                 group="소상공인 자금 지원",
                 value="자료대기",
                 period="월",
@@ -794,23 +794,23 @@ def make_manual_cards(credit_df: pd.DataFrame, policy_df: pd.DataFrame) -> list[
                 bar_left="입력 전",
                 bar_right="자료대기",
                 chart_points=[],
-                description="부산 소상공인 특별자금으로 공급된 정책자금 규모입니다. 현재 입력 자료는 기준월까지의 누계지원액이며, 월별 공급액은 전월 누계값이 확보된 뒤 차감 방식으로 산출할 수 있습니다.",
+                description="부산 소상공인 특별자금의 월별 공급 규모입니다. 기관 제공자료의 누계지원액을 기준으로 1월은 누계값, 2월 이후는 당월 누계지원액에서 전월 누계지원액을 차감해 산출합니다.",
             )
         )
     else:
         latest = policy_df.iloc[0]
+        latest_monthly_amount, delta_text, delta_tone = latest_policy_monthly_amount(policy_df)
         cumulative_amount = latest.get("cumulative_support_amount_krw")
-        delta_text, delta_tone = manual_delta(policy_df, "cumulative_support_amount_krw", "원")
-        bar_pct, bar_left, bar_right = bar_scale(cumulative_amount, "원")
+        bar_pct, bar_left, bar_right = bar_scale(latest_monthly_amount, "원")
         benchmark_parts = []
         benchmark_parts.append(f"총계획 {format_won_compact(latest.get('total_plan_amount_krw'))}")
         if not is_missing(latest.get("execution_rate_pct")):
             benchmark_parts.append(f"집행률 {format_value(latest.get('execution_rate_pct'), '%')}")
         cards.append(
             Card(
-                title="부산 소상공인 특별자금 공급액",
+                title="부산 소상공인 특별자금 월별공급액",
                 group="소상공인 자금 지원",
-                value=format_metric_number(cumulative_amount, "원"),
+                value=format_metric_number(latest_monthly_amount, "원"),
                 period=format_period(latest.get("base_month")),
                 source="부산신용보증재단",
                 unit="억원",
@@ -818,14 +818,14 @@ def make_manual_cards(credit_df: pd.DataFrame, policy_df: pd.DataFrame) -> list[
                 previous_tone=delta_tone,
                 benchmark_label="기준 비교",
                 benchmark_value=" · ".join(benchmark_parts),
-                note="누계 공급액 기준. 월별 공급액은 전월 누계값 확보 후 산출 가능",
+                note=f"누계 공급액 {format_won_compact(cumulative_amount)} 기준으로 월별 공급액 산출",
                 confidence="중간",
-                empty=is_missing(cumulative_amount),
+                empty=is_missing(latest_monthly_amount),
                 bar_pct=bar_pct,
                 bar_left=bar_left,
                 bar_right=bar_right,
-                chart_points=recent_manual_points(policy_df, "cumulative_support_amount_krw"),
-                description="부산 소상공인 특별자금으로 공급된 정책자금 규모입니다. 현재 입력 자료는 기준월까지의 누계지원액이며, 월별 공급액은 전월 누계값이 확보된 뒤 차감 방식으로 산출할 수 있습니다.",
+                chart_points=recent_policy_monthly_points(policy_df),
+                description="부산 소상공인 특별자금의 월별 공급 규모입니다. 기관 제공자료의 누계지원액을 기준으로 1월은 누계값, 2월 이후는 당월 누계지원액에서 전월 누계지원액을 차감해 산출합니다.",
             )
         )
     return cards
