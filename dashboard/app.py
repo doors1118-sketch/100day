@@ -962,7 +962,7 @@ def render_card(card: Card) -> str:
         """
 
 
-def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None:
+def render_metric_carousel(cards: list[Card], interval_seconds: int = 10) -> None:
     if not cards:
         return
     items = []
@@ -1016,14 +1016,13 @@ def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None
             .eco-carousel-track {{
               position: absolute;
               inset: 0;
-              display: grid;
-              grid-template-columns: minmax(0, 0.88fr) minmax(420px, 1.18fr) minmax(0, 0.88fr);
-              align-items: center;
-              gap: 20px;
-              padding: 34px 110px;
-              transition: opacity 180ms ease, transform 260ms ease;
+              overflow: hidden;
             }}
             .eco-carousel-card {{
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              width: 370px;
               min-height: 182px;
               padding: 24px 26px;
               border-radius: 18px;
@@ -1031,18 +1030,47 @@ def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None
               border: 1px solid rgba(210, 219, 230, 0.86);
               box-shadow: 0 18px 42px rgba(31, 45, 71, 0.1);
               text-align: center;
+              opacity: 0;
+              pointer-events: none;
+              will-change: transform, opacity, filter;
+              transition:
+                transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 420ms ease,
+                filter 420ms ease,
+                box-shadow 420ms ease;
             }}
-            .eco-carousel-card.center {{
+            .eco-carousel-card[data-slot="1"] {{
+              width: min(560px, calc(100% - 260px));
               min-height: 232px;
               padding: 30px 36px;
               border-radius: 20px;
               box-shadow: 0 24px 58px rgba(31, 45, 71, 0.18);
-              transform: translateY(-2px);
+              opacity: 1;
+              pointer-events: auto;
+              transform: translate(-50%, -50%) translateX(0) scale(1);
+              z-index: 4;
             }}
-            .eco-carousel-card.side {{
+            .eco-carousel-card[data-slot="0"],
+            .eco-carousel-card[data-slot="2"] {{
               opacity: 0.72;
               filter: saturate(0.86);
-              transform: scale(0.88);
+              z-index: 2;
+            }}
+            .eco-carousel-card[data-slot="0"] {{
+              transform: translate(-50%, -50%) translateX(-520px) scale(0.88);
+            }}
+            .eco-carousel-card[data-slot="2"] {{
+              transform: translate(-50%, -50%) translateX(520px) scale(0.88);
+            }}
+            .eco-carousel-card[data-slot="far-left"] {{
+              opacity: 0;
+              transform: translate(-50%, -50%) translateX(-860px) scale(0.78);
+              z-index: 1;
+            }}
+            .eco-carousel-card[data-slot="far-right"] {{
+              opacity: 0;
+              transform: translate(-50%, -50%) translateX(860px) scale(0.78);
+              z-index: 1;
             }}
             .eco-carousel-category {{
               display: inline-flex;
@@ -1057,7 +1085,7 @@ def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None
               line-height: 1.2;
               word-break: keep-all;
             }}
-            .eco-carousel-card.center .eco-carousel-category {{
+            .eco-carousel-card[data-slot="1"] .eco-carousel-category {{
               font-size: 16px;
             }}
             .category-icon {{
@@ -1191,7 +1219,7 @@ def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None
               letter-spacing: 0;
               word-break: keep-all;
             }}
-            .eco-carousel-card.center h3 {{
+            .eco-carousel-card[data-slot="1"] h3 {{
               min-height: 52px;
               font-size: 34px;
             }}
@@ -1211,7 +1239,7 @@ def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None
               letter-spacing: 0;
               white-space: nowrap;
             }}
-            .eco-carousel-card.center .eco-carousel-value strong {{
+            .eco-carousel-card[data-slot="1"] .eco-carousel-value strong {{
               font-size: 62px;
             }}
             .eco-carousel-value em {{
@@ -1252,7 +1280,7 @@ def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None
               font-weight: 900;
               line-height: 1;
             }}
-            .eco-carousel-card.center .eco-carousel-period {{
+            .eco-carousel-card[data-slot="1"] .eco-carousel-period {{
               min-height: 36px;
               padding: 0 20px;
               font-size: 20px;
@@ -1312,27 +1340,39 @@ def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None
                 border-radius: 16px;
               }}
               .eco-carousel-track {{
-                grid-template-columns: minmax(0, 1fr);
-                padding: 24px 52px;
+                overflow: hidden;
               }}
-              .eco-carousel-card.side {{
-                display: none;
+              .eco-carousel-card {{
+                width: 260px;
               }}
-              .eco-carousel-card.center {{
+              .eco-carousel-card[data-slot="0"] {{
+                transform: translate(-50%, -50%) translateX(-320px) scale(0.82);
+              }}
+              .eco-carousel-card[data-slot="2"] {{
+                transform: translate(-50%, -50%) translateX(320px) scale(0.82);
+              }}
+              .eco-carousel-card[data-slot="far-left"] {{
+                transform: translate(-50%, -50%) translateX(-520px) scale(0.72);
+              }}
+              .eco-carousel-card[data-slot="far-right"] {{
+                transform: translate(-50%, -50%) translateX(520px) scale(0.72);
+              }}
+              .eco-carousel-card[data-slot="1"] {{
+                width: min(380px, calc(100% - 104px));
                 min-height: 196px;
                 padding: 24px 20px;
               }}
-              .eco-carousel-card.center h3 {{
+              .eco-carousel-card[data-slot="1"] h3 {{
                 min-height: 42px;
                 font-size: 25px;
               }}
-              .eco-carousel-card.center .eco-carousel-value strong {{
+              .eco-carousel-card[data-slot="1"] .eco-carousel-value strong {{
                 font-size: 44px;
               }}
               .eco-carousel-value em {{
                 font-size: 14px;
               }}
-              .eco-carousel-card.center .eco-carousel-period {{
+              .eco-carousel-card[data-slot="1"] .eco-carousel-period {{
                 min-height: 30px;
                 font-size: 16px;
               }}
@@ -1360,29 +1400,28 @@ def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None
           </style>
         </head>
         <body>
-          <section class="economy-carousel" aria-label="민생경제 15개 지표 자동 순환">
+          <section class="economy-carousel" aria-label="economy indicator carousel">
             <div class="eco-carousel-stage">
-              <button class="eco-carousel-arrow left" type="button" aria-label="이전 지표"></button>
+              <button class="eco-carousel-arrow left" type="button" aria-label="previous indicator"></button>
               <div class="eco-carousel-track" id="carouselTrack"></div>
-              <button class="eco-carousel-arrow right" type="button" aria-label="다음 지표"></button>
+              <button class="eco-carousel-arrow right" type="button" aria-label="next indicator"></button>
+              <div class="eco-carousel-count" id="carouselCount"></div>
             </div>
           </section>
           <script>
             const items = {items_json};
             const intervalMs = {interval_seconds * 1000};
+            const transitionMs = 680;
             const track = document.getElementById("carouselTrack");
+            const count = document.getElementById("carouselCount");
             const prevButton = document.querySelector(".eco-carousel-arrow.left");
             const nextButton = document.querySelector(".eco-carousel-arrow.right");
             let currentIndex = 0;
             let timer = null;
+            let animating = false;
 
             function normalizeIndex(index) {{
               return (index + items.length) % items.length;
-            }}
-
-            function setText(parent, selector, value) {{
-              const node = parent.querySelector(selector);
-              if (node) node.textContent = value || "";
             }}
 
             function buildValue(value) {{
@@ -1409,9 +1448,10 @@ def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None
               return wrap;
             }}
 
-            function buildCard(item, role) {{
+            function buildCard(item, slot) {{
               const article = document.createElement("article");
-              article.className = `eco-carousel-card ${{role}} card-theme-${{item.theme || "default"}}`;
+              article.className = `eco-carousel-card card-theme-${{item.theme || "default"}}`;
+              article.dataset.slot = String(slot);
 
               const category = document.createElement("div");
               category.className = "eco-carousel-category";
@@ -1438,44 +1478,78 @@ def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None
               return article;
             }}
 
-            function render() {{
-              const previous = items[normalizeIndex(currentIndex - 1)];
-              const current = items[currentIndex];
-              const next = items[normalizeIndex(currentIndex + 1)];
-              track.style.opacity = "0";
-              track.style.transform = "translateX(14px)";
-              window.setTimeout(() => {{
-                track.replaceChildren(
-                  buildCard(previous, "side side-left"),
-                  buildCard(current, "center"),
-                  buildCard(next, "side side-right")
-                );
-                const count = document.createElement("div");
-                count.className = "eco-carousel-count";
-                count.textContent = `${{currentIndex + 1}}/${{items.length}}`;
-                track.append(count);
-                track.style.opacity = "1";
-                track.style.transform = "translateX(0)";
-              }}, 120);
+            function updateCount(index = currentIndex) {{
+              count.textContent = `${{index + 1}}/${{items.length}}`;
+            }}
+
+            function getSlot(slot) {{
+              return track.querySelector(`.eco-carousel-card[data-slot="${{slot}}"]`);
+            }}
+
+            function renderInitial() {{
+              track.replaceChildren(
+                buildCard(items[normalizeIndex(currentIndex - 1)], "0"),
+                buildCard(items[currentIndex], "1"),
+                buildCard(items[normalizeIndex(currentIndex + 1)], "2")
+              );
+              updateCount();
+            }}
+
+            function settle(nextIndex) {{
+              currentIndex = nextIndex;
+              track.replaceChildren(
+                buildCard(items[normalizeIndex(currentIndex - 1)], "0"),
+                buildCard(items[currentIndex], "1"),
+                buildCard(items[normalizeIndex(currentIndex + 1)], "2")
+              );
+              updateCount();
+              animating = false;
             }}
 
             function go(delta) {{
-              currentIndex = normalizeIndex(currentIndex + delta);
-              render();
+              if (animating || items.length < 2) return;
+              animating = true;
+              const nextIndex = normalizeIndex(currentIndex + delta);
+              const left = getSlot("0");
+              const center = getSlot("1");
+              const right = getSlot("2");
+
+              if (delta > 0) {{
+                const incoming = buildCard(items[normalizeIndex(currentIndex + 2)], "far-right");
+                track.append(incoming);
+                window.requestAnimationFrame(() => {{
+                  left.dataset.slot = "far-left";
+                  center.dataset.slot = "0";
+                  right.dataset.slot = "1";
+                  incoming.dataset.slot = "2";
+                  updateCount(nextIndex);
+                }});
+              }} else {{
+                const incoming = buildCard(items[normalizeIndex(currentIndex - 2)], "far-left");
+                track.prepend(incoming);
+                window.requestAnimationFrame(() => {{
+                  incoming.dataset.slot = "0";
+                  left.dataset.slot = "1";
+                  center.dataset.slot = "2";
+                  right.dataset.slot = "far-right";
+                  updateCount(nextIndex);
+                }});
+              }}
+
+              window.setTimeout(() => settle(nextIndex), transitionMs);
               restart();
             }}
 
             function restart() {{
               if (timer) window.clearInterval(timer);
               timer = window.setInterval(() => {{
-                currentIndex = normalizeIndex(currentIndex + 1);
-                render();
+                go(1);
               }}, intervalMs);
             }}
 
             prevButton.addEventListener("click", () => go(-1));
             nextButton.addEventListener("click", () => go(1));
-            render();
+            renderInitial();
             restart();
           </script>
         </body>
@@ -4244,5 +4318,5 @@ else:
         """,
         unsafe_allow_html=True,
     )
-    render_metric_carousel(all_cards, interval_seconds=5)
+    render_metric_carousel(all_cards, interval_seconds=10)
     render_card_grid(all_cards, columns=3)
