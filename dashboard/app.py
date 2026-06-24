@@ -13,6 +13,7 @@ from typing import Any
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 APP_HOME = Path(os.getenv("MINSAENG100_HOME", Path(__file__).resolve().parents[1]))
@@ -961,74 +962,527 @@ def render_card(card: Card) -> str:
         """
 
 
-def render_carousel_value(card: Card) -> str:
-    value = str(card.value)
-    if "(" in value and value.endswith(")"):
-        main, suffix = value.split("(", 1)
-        return (
-            '<strong class="eco-carousel-value-combo">'
-            f"<b>{safe_text(main)}</b>"
-            f"<small>({safe_text(suffix)}</small>"
-            "</strong>"
-        )
-    return f"<strong>{safe_text(value)}</strong>"
-
-
-def render_carousel_metric(card: Card, role: str) -> str:
-    icon_type, icon_html = category_icon(card.group)
-    return f"""
-      <article class="eco-carousel-card {role} card-theme-{icon_type}">
-        <div class="eco-carousel-category">
-          <span class="category-icon category-icon-{icon_type}" aria-hidden="true">{safe_text(icon_html)}</span>
-          <span>{safe_text(card.group)}</span>
-        </div>
-        <h3>{safe_text(card.title)}</h3>
-        <div class="eco-carousel-value">
-          {render_carousel_value(card)}
-          <em>{safe_text(card.unit)}</em>
-        </div>
-        <span class="eco-carousel-period">{safe_text(card.period)}</span>
-      </article>
-    """
-
-
 def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None:
     if not cards:
         return
-    total = len(cards)
-    duration_seconds = total * interval_seconds
-    slides: list[str] = []
-    for idx, card in enumerate(cards):
-        previous_card = cards[(idx - 1) % total]
-        next_card = cards[(idx + 1) % total]
-        delay_seconds = idx * interval_seconds
-        slides.append(
-            f"""
-            <div class="eco-carousel-slide" style="--delay: {delay_seconds}s;">
-              <div class="eco-carousel-count">{idx + 1}/{total}</div>
-              {render_carousel_metric(previous_card, "side side-left")}
-              {render_carousel_metric(card, "center")}
-              {render_carousel_metric(next_card, "side side-right")}
-            </div>
-            """
+    items = []
+    for card in cards:
+        icon_type, _ = category_icon(card.group)
+        items.append(
+            {
+                "group": str(card.group),
+                "title": str(card.title),
+                "value": str(card.value),
+                "unit": str(card.unit),
+                "period": str(card.period),
+                "theme": icon_type,
+            }
         )
-    st.html(
+    items_json = json.dumps(items, ensure_ascii=False).replace("</", "<\\/")
+    components.html(
         f"""
-        <section class="economy-carousel notranslate" translate="no" lang="ko" style="--carousel-duration: {duration_seconds}s;">
-          <div class="eco-carousel-head">
-            <div>
-              <span>15개 지표 자동 순환</span>
-              <h2>민생경제 핵심지표 순환 보기</h2>
+        <!doctype html>
+        <html lang="ko">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <style>
+            :root {{
+              --font-kr: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+            }}
+            * {{ box-sizing: border-box; }}
+            body {{
+              margin: 0;
+              background: transparent;
+              font-family: var(--font-kr);
+              overflow: hidden;
+            }}
+            .economy-carousel {{
+              width: 100%;
+              max-width: 1680px;
+              margin: 0 auto;
+              padding: 0 36px;
+            }}
+            .eco-carousel-stage {{
+              position: relative;
+              height: 300px;
+              overflow: hidden;
+              border-radius: 22px;
+              background:
+                radial-gradient(circle at 50% 58%, rgba(47, 113, 199, 0.16), transparent 28%),
+                linear-gradient(180deg, #f5f8fc 0%, #eef3f8 100%);
+              box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.78);
+            }}
+            .eco-carousel-track {{
+              position: absolute;
+              inset: 0;
+              display: grid;
+              grid-template-columns: minmax(0, 0.88fr) minmax(420px, 1.18fr) minmax(0, 0.88fr);
+              align-items: center;
+              gap: 20px;
+              padding: 34px 110px;
+              transition: opacity 180ms ease, transform 260ms ease;
+            }}
+            .eco-carousel-card {{
+              min-height: 182px;
+              padding: 24px 26px;
+              border-radius: 18px;
+              background: #fff;
+              border: 1px solid rgba(210, 219, 230, 0.86);
+              box-shadow: 0 18px 42px rgba(31, 45, 71, 0.1);
+              text-align: center;
+            }}
+            .eco-carousel-card.center {{
+              min-height: 232px;
+              padding: 30px 36px;
+              border-radius: 20px;
+              box-shadow: 0 24px 58px rgba(31, 45, 71, 0.18);
+              transform: translateY(-2px);
+            }}
+            .eco-carousel-card.side {{
+              opacity: 0.72;
+              filter: saturate(0.86);
+              transform: scale(0.88);
+            }}
+            .eco-carousel-category {{
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              gap: 7px;
+              min-width: 0;
+              margin-bottom: 10px;
+              color: #687889;
+              font-size: 14px;
+              font-weight: 900;
+              line-height: 1.2;
+              word-break: keep-all;
+            }}
+            .eco-carousel-card.center .eco-carousel-category {{
+              font-size: 16px;
+            }}
+            .category-icon {{
+              position: relative;
+              width: 30px;
+              height: 30px;
+              border-radius: 50%;
+              color: #fff;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              flex: 0 0 auto;
+              box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.14);
+            }}
+            .category-icon::before,
+            .category-icon::after {{
+              content: "";
+              position: absolute;
+              box-sizing: border-box;
+            }}
+            .category-icon-funding {{ background: #d84d7f; }}
+            .category-icon-funding::before {{
+              content: "₩";
+              left: 5px;
+              top: 6px;
+              color: #fff;
+              font-size: 12px;
+              font-weight: 900;
+              line-height: 1;
+            }}
+            .category-icon-funding::after {{
+              right: 5px;
+              bottom: 6px;
+              width: 9px;
+              height: 9px;
+              background:
+                linear-gradient(#fff, #fff) 0 5px / 2px 4px no-repeat,
+                linear-gradient(#fff, #fff) 4px 2px / 2px 7px no-repeat,
+                linear-gradient(#fff, #fff) 8px 0 / 2px 9px no-repeat;
+            }}
+            .category-icon-sentiment {{
+              background:
+                radial-gradient(circle at 50% 67%, #fff 0 2px, transparent 2.5px),
+                #57b861;
+            }}
+            .category-icon-sentiment::before {{
+              left: 7px;
+              top: 8px;
+              width: 16px;
+              height: 10px;
+              border: 2px solid #fff;
+              border-bottom: 0;
+              border-radius: 16px 16px 0 0;
+            }}
+            .category-icon-sentiment::after {{
+              left: 14px;
+              top: 17px;
+              width: 9px;
+              height: 2px;
+              border-radius: 999px;
+              background: #fff;
+              transform: rotate(-36deg);
+              transform-origin: left center;
+            }}
+            .category-icon-card {{ background: #397dd1; }}
+            .category-icon-card::before {{
+              left: 6px;
+              top: 8px;
+              width: 18px;
+              height: 13px;
+              border: 2px solid #fff;
+              border-radius: 3px;
+            }}
+            .category-icon-card::after {{
+              left: 8px;
+              top: 12px;
+              width: 14px;
+              height: 2px;
+              background: #fff;
+            }}
+            .category-icon-work {{ background: #d46a38; }}
+            .category-icon-work::before {{
+              left: 6px;
+              top: 10px;
+              width: 18px;
+              height: 12px;
+              border: 2px solid #fff;
+              border-radius: 3px;
+            }}
+            .category-icon-work::after {{
+              left: 11px;
+              top: 7px;
+              width: 8px;
+              height: 5px;
+              border: 2px solid #fff;
+              border-bottom: 0;
+              border-radius: 3px 3px 0 0;
+            }}
+            .category-icon-region {{ background: #6667c8; }}
+            .category-icon-region::before {{
+              left: 7px;
+              top: 8px;
+              width: 16px;
+              height: 12px;
+              border-left: 2px solid #fff;
+              border-bottom: 2px solid #fff;
+            }}
+            .category-icon-region::after {{
+              right: 6px;
+              top: 7px;
+              width: 7px;
+              height: 7px;
+              border-right: 2px solid #fff;
+              border-top: 2px solid #fff;
+              transform: rotate(45deg);
+            }}
+            .category-icon-default {{ background: #657386; }}
+            .category-icon-default::before {{
+              width: 12px;
+              height: 12px;
+              border: 2px solid #fff;
+              border-radius: 50%;
+            }}
+            .eco-carousel-card h3 {{
+              min-height: 42px;
+              margin: 0 0 12px;
+              color: #222b35;
+              font-size: 24px;
+              font-weight: 900;
+              line-height: 1.22;
+              letter-spacing: 0;
+              word-break: keep-all;
+            }}
+            .eco-carousel-card.center h3 {{
+              min-height: 52px;
+              font-size: 34px;
+            }}
+            .eco-carousel-value {{
+              display: flex;
+              align-items: baseline;
+              justify-content: center;
+              gap: 9px;
+              margin-bottom: 10px;
+              color: #2f7fe8;
+            }}
+            .eco-carousel-value strong {{
+              color: #2f7fe8;
+              font-size: 44px;
+              font-weight: 900;
+              line-height: 1;
+              letter-spacing: 0;
+              white-space: nowrap;
+            }}
+            .eco-carousel-card.center .eco-carousel-value strong {{
+              font-size: 62px;
+            }}
+            .eco-carousel-value em {{
+              color: #77889b;
+              font-size: 17px;
+              font-style: normal;
+              font-weight: 900;
+              white-space: nowrap;
+            }}
+            .eco-carousel-value-combo {{
+              display: inline-flex;
+              align-items: baseline;
+              gap: 3px;
+            }}
+            .eco-carousel-value-combo b {{
+              color: inherit;
+              font-size: inherit;
+              font-weight: inherit;
+              line-height: inherit;
+            }}
+            .eco-carousel-value-combo small {{
+              color: inherit;
+              font-size: 0.56em;
+              font-weight: inherit;
+              line-height: 1;
+              white-space: nowrap;
+            }}
+            .eco-carousel-period {{
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 30px;
+              padding: 0 16px;
+              border-radius: 999px;
+              background: #eef2f7;
+              color: #6b7c8f;
+              font-size: 16px;
+              font-weight: 900;
+              line-height: 1;
+            }}
+            .eco-carousel-card.center .eco-carousel-period {{
+              min-height: 36px;
+              padding: 0 20px;
+              font-size: 20px;
+            }}
+            .eco-carousel-count {{
+              position: absolute;
+              right: 72px;
+              bottom: 26px;
+              color: #3e7ae4;
+              font-size: 18px;
+              font-weight: 900;
+            }}
+            .eco-carousel-arrow {{
+              position: absolute;
+              top: 50%;
+              z-index: 8;
+              width: 58px;
+              height: 78px;
+              border: 0;
+              background: transparent;
+              cursor: pointer;
+            }}
+            .eco-carousel-arrow::before {{
+              content: "";
+              position: absolute;
+              top: 15px;
+              width: 46px;
+              height: 46px;
+              border-top: 3px solid #1aa2ff;
+              border-left: 3px solid #1aa2ff;
+            }}
+            .eco-carousel-arrow.left {{
+              left: 26px;
+              transform: translateY(-50%);
+            }}
+            .eco-carousel-arrow.left::before {{
+              left: 9px;
+              transform: rotate(-45deg);
+            }}
+            .eco-carousel-arrow.right {{
+              right: 26px;
+              transform: translateY(-50%);
+            }}
+            .eco-carousel-arrow.right::before {{
+              right: 9px;
+              transform: rotate(135deg);
+            }}
+            .eco-carousel-arrow:hover::before {{
+              border-color: #0077dd;
+            }}
+            @media (max-width: 900px) {{
+              .economy-carousel {{
+                padding: 0 16px;
+              }}
+              .eco-carousel-stage {{
+                height: 248px;
+                border-radius: 16px;
+              }}
+              .eco-carousel-track {{
+                grid-template-columns: minmax(0, 1fr);
+                padding: 24px 52px;
+              }}
+              .eco-carousel-card.side {{
+                display: none;
+              }}
+              .eco-carousel-card.center {{
+                min-height: 196px;
+                padding: 24px 20px;
+              }}
+              .eco-carousel-card.center h3 {{
+                min-height: 42px;
+                font-size: 25px;
+              }}
+              .eco-carousel-card.center .eco-carousel-value strong {{
+                font-size: 44px;
+              }}
+              .eco-carousel-value em {{
+                font-size: 14px;
+              }}
+              .eco-carousel-card.center .eco-carousel-period {{
+                min-height: 30px;
+                font-size: 16px;
+              }}
+              .eco-carousel-count {{
+                right: 18px;
+                bottom: 14px;
+                font-size: 14px;
+              }}
+              .eco-carousel-arrow {{
+                width: 42px;
+                height: 58px;
+              }}
+              .eco-carousel-arrow::before {{
+                top: 14px;
+                width: 30px;
+                height: 30px;
+              }}
+              .eco-carousel-arrow.left {{
+                left: 10px;
+              }}
+              .eco-carousel-arrow.right {{
+                right: 10px;
+              }}
+            }}
+          </style>
+        </head>
+        <body>
+          <section class="economy-carousel" aria-label="민생경제 15개 지표 자동 순환">
+            <div class="eco-carousel-stage">
+              <button class="eco-carousel-arrow left" type="button" aria-label="이전 지표"></button>
+              <div class="eco-carousel-track" id="carouselTrack"></div>
+              <button class="eco-carousel-arrow right" type="button" aria-label="다음 지표"></button>
             </div>
-            <p>{interval_seconds}초마다 다음 지표로 전환됩니다. 상세 비교표와 최근 추이는 아래 카드에서 확인합니다.</p>
-          </div>
-          <div class="eco-carousel-stage" aria-label="민생경제 15개 지표 자동 순환">
-            <span class="eco-carousel-arrow left" aria-hidden="true"></span>
-            <span class="eco-carousel-arrow right" aria-hidden="true"></span>
-            {''.join(slides)}
-          </div>
-        </section>
-        """
+          </section>
+          <script>
+            const items = {items_json};
+            const intervalMs = {interval_seconds * 1000};
+            const track = document.getElementById("carouselTrack");
+            const prevButton = document.querySelector(".eco-carousel-arrow.left");
+            const nextButton = document.querySelector(".eco-carousel-arrow.right");
+            let currentIndex = 0;
+            let timer = null;
+
+            function normalizeIndex(index) {{
+              return (index + items.length) % items.length;
+            }}
+
+            function setText(parent, selector, value) {{
+              const node = parent.querySelector(selector);
+              if (node) node.textContent = value || "";
+            }}
+
+            function buildValue(value) {{
+              const wrap = document.createElement("div");
+              wrap.className = "eco-carousel-value";
+              const valueText = String(value || "");
+              if (valueText.includes("(") && valueText.endsWith(")")) {{
+                const openIndex = valueText.indexOf("(");
+                const main = valueText.slice(0, openIndex);
+                const suffix = valueText.slice(openIndex);
+                const strong = document.createElement("strong");
+                strong.className = "eco-carousel-value-combo";
+                const mainNode = document.createElement("b");
+                mainNode.textContent = main;
+                const suffixNode = document.createElement("small");
+                suffixNode.textContent = suffix;
+                strong.append(mainNode, suffixNode);
+                wrap.append(strong);
+              }} else {{
+                const strong = document.createElement("strong");
+                strong.textContent = valueText;
+                wrap.append(strong);
+              }}
+              return wrap;
+            }}
+
+            function buildCard(item, role) {{
+              const article = document.createElement("article");
+              article.className = `eco-carousel-card ${{role}} card-theme-${{item.theme || "default"}}`;
+
+              const category = document.createElement("div");
+              category.className = "eco-carousel-category";
+              const icon = document.createElement("span");
+              icon.className = `category-icon category-icon-${{item.theme || "default"}}`;
+              icon.setAttribute("aria-hidden", "true");
+              const group = document.createElement("span");
+              group.textContent = item.group || "";
+              category.append(icon, group);
+
+              const title = document.createElement("h3");
+              title.textContent = item.title || "";
+
+              const value = buildValue(item.value);
+              const unit = document.createElement("em");
+              unit.textContent = item.unit || "";
+              value.append(unit);
+
+              const period = document.createElement("span");
+              period.className = "eco-carousel-period";
+              period.textContent = item.period || "";
+
+              article.append(category, title, value, period);
+              return article;
+            }}
+
+            function render() {{
+              const previous = items[normalizeIndex(currentIndex - 1)];
+              const current = items[currentIndex];
+              const next = items[normalizeIndex(currentIndex + 1)];
+              track.style.opacity = "0";
+              track.style.transform = "translateX(14px)";
+              window.setTimeout(() => {{
+                track.replaceChildren(
+                  buildCard(previous, "side side-left"),
+                  buildCard(current, "center"),
+                  buildCard(next, "side side-right")
+                );
+                const count = document.createElement("div");
+                count.className = "eco-carousel-count";
+                count.textContent = `${{currentIndex + 1}}/${{items.length}}`;
+                track.append(count);
+                track.style.opacity = "1";
+                track.style.transform = "translateX(0)";
+              }}, 120);
+            }}
+
+            function go(delta) {{
+              currentIndex = normalizeIndex(currentIndex + delta);
+              render();
+              restart();
+            }}
+
+            function restart() {{
+              if (timer) window.clearInterval(timer);
+              timer = window.setInterval(() => {{
+                currentIndex = normalizeIndex(currentIndex + 1);
+                render();
+              }}, intervalMs);
+            }}
+
+            prevButton.addEventListener("click", () => go(-1));
+            nextButton.addEventListener("click", () => go(1));
+            render();
+            restart();
+          </script>
+        </body>
+        </html>
+        """,
+        height=324,
+        scrolling=False,
     )
 
 
@@ -1461,41 +1915,6 @@ def inject_css() -> None:
           margin: 18px auto 28px;
           padding: 0 36px;
           box-sizing: border-box;
-        }
-
-        .eco-carousel-head {
-          display: flex;
-          align-items: end;
-          justify-content: space-between;
-          gap: 24px;
-          margin-bottom: 14px;
-        }
-
-        .eco-carousel-head span {
-          display: block;
-          margin-bottom: 5px;
-          color: #e34d72;
-          font-size: 14px;
-          font-weight: 900;
-        }
-
-        .eco-carousel-head h2 {
-          margin: 0;
-          color: #081521;
-          font-size: 28px;
-          font-weight: 900;
-          letter-spacing: 0;
-        }
-
-        .eco-carousel-head p {
-          max-width: 520px;
-          margin: 0;
-          color: #516171;
-          font-size: 14px;
-          font-weight: 800;
-          line-height: 1.5;
-          text-align: right;
-          word-break: keep-all;
         }
 
         .eco-carousel-stage {
@@ -3364,21 +3783,6 @@ def inject_css() -> None:
           .economy-carousel {
             padding: 0 16px;
             margin: 18px auto 22px;
-          }
-
-          .eco-carousel-head {
-            display: block;
-          }
-
-          .eco-carousel-head h2 {
-            font-size: 23px;
-          }
-
-          .eco-carousel-head p {
-            max-width: none;
-            margin-top: 8px;
-            font-size: 12px;
-            text-align: left;
           }
 
           .eco-carousel-stage {
