@@ -1682,7 +1682,6 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         <section class="{board_class} notranslate" translate="no" lang="ko">
           <div class="project-board-head">
             <div>
-              <span class="project-kicker">매일 부산광역시장 직접 점검</span>
               <h2>민생100일 비상대책 추진상황</h2>
             </div>
             <div class="project-view-toggle" aria-label="추진상황 보기 방식">
@@ -2213,14 +2212,6 @@ def inject_css() -> None:
           justify-content: space-between;
           gap: 28px;
           padding: 22px 0 6px;
-        }
-
-        .project-kicker {
-          display: inline-block;
-          margin-bottom: 8px;
-          color: #e34d5f;
-          font-size: 16px;
-          font-weight: 900;
         }
 
         .project-board-head h2 {
