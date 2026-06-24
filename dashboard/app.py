@@ -961,6 +961,77 @@ def render_card(card: Card) -> str:
         """
 
 
+def render_carousel_value(card: Card) -> str:
+    value = str(card.value)
+    if "(" in value and value.endswith(")"):
+        main, suffix = value.split("(", 1)
+        return (
+            '<strong class="eco-carousel-value-combo">'
+            f"<b>{safe_text(main)}</b>"
+            f"<small>({safe_text(suffix)}</small>"
+            "</strong>"
+        )
+    return f"<strong>{safe_text(value)}</strong>"
+
+
+def render_carousel_metric(card: Card, role: str) -> str:
+    icon_type, icon_html = category_icon(card.group)
+    return f"""
+      <article class="eco-carousel-card {role} card-theme-{icon_type}">
+        <div class="eco-carousel-category">
+          <span class="category-icon category-icon-{icon_type}" aria-hidden="true">{safe_text(icon_html)}</span>
+          <span>{safe_text(card.group)}</span>
+        </div>
+        <h3>{safe_text(card.title)}</h3>
+        <div class="eco-carousel-value">
+          {render_carousel_value(card)}
+          <em>{safe_text(card.unit)}</em>
+        </div>
+        <span class="eco-carousel-period">{safe_text(card.period)}</span>
+      </article>
+    """
+
+
+def render_metric_carousel(cards: list[Card], interval_seconds: int = 5) -> None:
+    if not cards:
+        return
+    total = len(cards)
+    duration_seconds = total * interval_seconds
+    slides: list[str] = []
+    for idx, card in enumerate(cards):
+        previous_card = cards[(idx - 1) % total]
+        next_card = cards[(idx + 1) % total]
+        delay_seconds = idx * interval_seconds
+        slides.append(
+            f"""
+            <div class="eco-carousel-slide" style="--delay: {delay_seconds}s;">
+              <div class="eco-carousel-count">{idx + 1}/{total}</div>
+              {render_carousel_metric(previous_card, "side side-left")}
+              {render_carousel_metric(card, "center")}
+              {render_carousel_metric(next_card, "side side-right")}
+            </div>
+            """
+        )
+    st.html(
+        f"""
+        <section class="economy-carousel notranslate" translate="no" lang="ko" style="--carousel-duration: {duration_seconds}s;">
+          <div class="eco-carousel-head">
+            <div>
+              <span>15개 지표 자동 순환</span>
+              <h2>민생경제 핵심지표 순환 보기</h2>
+            </div>
+            <p>{interval_seconds}초마다 다음 지표로 전환됩니다. 상세 비교표와 최근 추이는 아래 카드에서 확인합니다.</p>
+          </div>
+          <div class="eco-carousel-stage" aria-label="민생경제 15개 지표 자동 순환">
+            <span class="eco-carousel-arrow left" aria-hidden="true"></span>
+            <span class="eco-carousel-arrow right" aria-hidden="true"></span>
+            {''.join(slides)}
+          </div>
+        </section>
+        """
+    )
+
+
 def render_card_grid(cards: list[Card], columns: int = 3) -> None:
     cards_html = "\n".join(render_card(card) for card in cards)
     st.html(
@@ -1383,6 +1454,256 @@ def inject_css() -> None:
 
         .dashboard-summary {
           display: none;
+        }
+
+        .economy-carousel {
+          max-width: 1680px;
+          margin: 18px auto 28px;
+          padding: 0 36px;
+          box-sizing: border-box;
+        }
+
+        .eco-carousel-head {
+          display: flex;
+          align-items: end;
+          justify-content: space-between;
+          gap: 24px;
+          margin-bottom: 14px;
+        }
+
+        .eco-carousel-head span {
+          display: block;
+          margin-bottom: 5px;
+          color: #e34d72;
+          font-size: 14px;
+          font-weight: 900;
+        }
+
+        .eco-carousel-head h2 {
+          margin: 0;
+          color: #081521;
+          font-size: 28px;
+          font-weight: 900;
+          letter-spacing: 0;
+        }
+
+        .eco-carousel-head p {
+          max-width: 520px;
+          margin: 0;
+          color: #516171;
+          font-size: 14px;
+          font-weight: 800;
+          line-height: 1.5;
+          text-align: right;
+          word-break: keep-all;
+        }
+
+        .eco-carousel-stage {
+          position: relative;
+          height: 300px;
+          overflow: hidden;
+          border-radius: 22px;
+          background:
+            radial-gradient(circle at 50% 58%, rgba(47, 113, 199, 0.16), transparent 28%),
+            linear-gradient(180deg, #f5f8fc 0%, #eef3f8 100%);
+          box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.78);
+        }
+
+        .eco-carousel-slide {
+          position: absolute;
+          inset: 0;
+          display: grid;
+          grid-template-columns: minmax(0, 0.88fr) minmax(420px, 1.18fr) minmax(0, 0.88fr);
+          align-items: center;
+          gap: 20px;
+          padding: 34px 110px;
+          opacity: 0;
+          pointer-events: none;
+          transform: translateX(18px);
+          animation: ecoCarouselShow var(--carousel-duration) linear infinite both;
+          animation-delay: var(--delay);
+          box-sizing: border-box;
+        }
+
+        @keyframes ecoCarouselShow {
+          0% {
+            opacity: 0;
+            transform: translateX(18px);
+          }
+          0.25%,
+          6.1% {
+            opacity: 1;
+            transform: translateX(0);
+          }
+          6.65%,
+          100% {
+            opacity: 0;
+            transform: translateX(-18px);
+          }
+        }
+
+        .eco-carousel-card {
+          min-height: 182px;
+          padding: 24px 26px;
+          border-radius: 18px;
+          background: #fff;
+          border: 1px solid rgba(210, 219, 230, 0.86);
+          box-shadow: 0 18px 42px rgba(31, 45, 71, 0.1);
+          text-align: center;
+          box-sizing: border-box;
+        }
+
+        .eco-carousel-card.center {
+          min-height: 232px;
+          padding: 30px 36px;
+          border-radius: 20px;
+          box-shadow: 0 24px 58px rgba(31, 45, 71, 0.18);
+          transform: translateY(-2px);
+        }
+
+        .eco-carousel-card.side {
+          opacity: 0.72;
+          filter: saturate(0.86);
+          transform: scale(0.88);
+        }
+
+        .eco-carousel-category {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          min-width: 0;
+          margin-bottom: 10px;
+          color: #687889;
+          font-size: 14px;
+          font-weight: 900;
+          line-height: 1.2;
+          word-break: keep-all;
+        }
+
+        .eco-carousel-card.center .eco-carousel-category {
+          font-size: 16px;
+        }
+
+        .eco-carousel-card h3 {
+          min-height: 42px;
+          margin: 0 0 12px;
+          color: #222b35;
+          font-size: 24px;
+          font-weight: 900;
+          line-height: 1.22;
+          letter-spacing: 0;
+          word-break: keep-all;
+        }
+
+        .eco-carousel-card.center h3 {
+          min-height: 52px;
+          font-size: 34px;
+        }
+
+        .eco-carousel-value {
+          display: flex;
+          align-items: baseline;
+          justify-content: center;
+          gap: 9px;
+          margin-bottom: 10px;
+          color: #2f7fe8;
+        }
+
+        .eco-carousel-value strong {
+          color: #2f7fe8;
+          font-size: 44px;
+          font-weight: 900;
+          line-height: 1;
+          letter-spacing: 0;
+          white-space: nowrap;
+        }
+
+        .eco-carousel-card.center .eco-carousel-value strong {
+          font-size: 62px;
+        }
+
+        .eco-carousel-value em {
+          color: #77889b;
+          font-size: 17px;
+          font-style: normal;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .eco-carousel-value-combo {
+          display: inline-flex;
+          align-items: baseline;
+          gap: 3px;
+        }
+
+        .eco-carousel-value-combo b {
+          color: inherit;
+          font-size: inherit;
+          font-weight: inherit;
+          line-height: inherit;
+        }
+
+        .eco-carousel-value-combo small {
+          color: inherit;
+          font-size: 0.56em;
+          font-weight: inherit;
+          line-height: 1;
+          white-space: nowrap;
+        }
+
+        .eco-carousel-period {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 30px;
+          padding: 0 16px;
+          border-radius: 999px;
+          background: #eef2f7;
+          color: #6b7c8f;
+          font-size: 16px;
+          font-weight: 900;
+          line-height: 1;
+        }
+
+        .eco-carousel-card.center .eco-carousel-period {
+          min-height: 36px;
+          padding: 0 20px;
+          font-size: 20px;
+        }
+
+        .eco-carousel-count {
+          position: absolute;
+          right: 72px;
+          bottom: 26px;
+          color: #3e7ae4;
+          font-size: 18px;
+          font-weight: 900;
+        }
+
+        .eco-carousel-arrow {
+          position: absolute;
+          top: 50%;
+          z-index: 5;
+          width: 52px;
+          height: 52px;
+          border-top: 3px solid #1aa2ff;
+          border-left: 3px solid #1aa2ff;
+          opacity: 0.92;
+        }
+
+        .eco-carousel-arrow.left {
+          left: 34px;
+          transform: translateY(-50%) rotate(-45deg);
+        }
+
+        .eco-carousel-arrow.right {
+          right: 34px;
+          transform: translateY(-50%) rotate(135deg);
+        }
+
+        .economy-carousel:hover .eco-carousel-slide {
+          animation-play-state: paused;
         }
 
         .project-board {
@@ -3040,6 +3361,82 @@ def inject_css() -> None:
             padding: 16px;
           }
 
+          .economy-carousel {
+            padding: 0 16px;
+            margin: 18px auto 22px;
+          }
+
+          .eco-carousel-head {
+            display: block;
+          }
+
+          .eco-carousel-head h2 {
+            font-size: 23px;
+          }
+
+          .eco-carousel-head p {
+            max-width: none;
+            margin-top: 8px;
+            font-size: 12px;
+            text-align: left;
+          }
+
+          .eco-carousel-stage {
+            height: 248px;
+            border-radius: 16px;
+          }
+
+          .eco-carousel-slide {
+            grid-template-columns: minmax(0, 1fr);
+            padding: 24px 52px;
+          }
+
+          .eco-carousel-card.side {
+            display: none;
+          }
+
+          .eco-carousel-card.center {
+            min-height: 196px;
+            padding: 24px 20px;
+          }
+
+          .eco-carousel-card.center h3 {
+            min-height: 42px;
+            font-size: 25px;
+          }
+
+          .eco-carousel-card.center .eco-carousel-value strong {
+            font-size: 44px;
+          }
+
+          .eco-carousel-value em {
+            font-size: 14px;
+          }
+
+          .eco-carousel-card.center .eco-carousel-period {
+            min-height: 30px;
+            font-size: 16px;
+          }
+
+          .eco-carousel-count {
+            right: 18px;
+            bottom: 14px;
+            font-size: 14px;
+          }
+
+          .eco-carousel-arrow {
+            width: 30px;
+            height: 30px;
+          }
+
+          .eco-carousel-arrow.left {
+            left: 18px;
+          }
+
+          .eco-carousel-arrow.right {
+            right: 18px;
+          }
+
           .project-board {
             padding: 0 16px 28px;
             overflow-x: auto;
@@ -3443,4 +3840,5 @@ else:
         """,
         unsafe_allow_html=True,
     )
+    render_metric_carousel(all_cards, interval_seconds=5)
     render_card_grid(all_cards, columns=3)
