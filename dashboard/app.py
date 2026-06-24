@@ -783,7 +783,7 @@ def make_manual_cards(credit_df: pd.DataFrame, policy_df: pd.DataFrame) -> list[
     if policy_df.empty:
         cards.append(
             Card(
-                title="부산 소상공인 특별자금 월별공급액",
+                title="부산 소상공인 특별자금 월별 공급액",
                 group="소상공인 자금 지원",
                 value="자료대기",
                 period="월",
@@ -808,7 +808,7 @@ def make_manual_cards(credit_df: pd.DataFrame, policy_df: pd.DataFrame) -> list[
             benchmark_parts.append(f"집행률 {format_value(latest.get('execution_rate_pct'), '%')}")
         cards.append(
             Card(
-                title="부산 소상공인 특별자금 월별공급액",
+                title="부산 소상공인 특별자금 월별 공급액",
                 group="소상공인 자금 지원",
                 value=format_metric_number(latest_monthly_amount, "원"),
                 period=format_period(latest.get("base_month")),
