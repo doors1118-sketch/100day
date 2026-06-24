@@ -7,9 +7,10 @@ import math
 import os
 import sqlite3
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import streamlit as st
@@ -21,6 +22,7 @@ CATALOG_PATH = APP_HOME / "config" / "indicators.json"
 DB_PATH = Path(os.getenv("MINSAENG100_DB", APP_HOME / "data" / "minsaeng100.sqlite"))
 MINSAENG_START_DATE = date(2026, 7, 1)
 MINSAENG_TOTAL_DAYS = 100
+KOREA_TZ = ZoneInfo("Asia/Seoul")
 
 
 st.set_page_config(
@@ -268,7 +270,7 @@ def is_missing(value: Any) -> bool:
 
 
 def minsaeng_countdown(today: date | None = None) -> tuple[str, str]:
-    today = today or date.today()
+    today = today or datetime.now(KOREA_TZ).date()
     elapsed_days = (today - MINSAENG_START_DATE).days
     if elapsed_days < 0:
         remaining_days = MINSAENG_TOTAL_DAYS
