@@ -1733,7 +1733,7 @@ def inject_css() -> None:
         }
 
         .project-board.compact {
-          max-width: 1840px;
+          max-width: 1720px;
           padding: 0 28px 28px;
         }
 
@@ -1847,7 +1847,7 @@ def inject_css() -> None:
           min-height: 48px;
           margin: 0 0 12px;
           color: #fff;
-          font-size: 18px;
+          font-size: 17px;
           font-weight: 900;
           line-height: 1.33;
           word-break: keep-all;
