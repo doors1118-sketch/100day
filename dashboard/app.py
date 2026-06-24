@@ -976,6 +976,13 @@ def active_view() -> str:
     return raw_view if raw_view in {"economy", "check"} else "economy"
 
 
+def active_project_layout() -> str:
+    raw_layout = st.query_params.get("layout", "detail")
+    if isinstance(raw_layout, list):
+        raw_layout = raw_layout[0] if raw_layout else "detail"
+    return raw_layout if raw_layout in {"detail", "compact"} else "detail"
+
+
 def nav_class(view: str, current_view: str, base_class: str) -> str:
     classes = [base_class]
     if view == current_view:
@@ -1027,16 +1034,59 @@ def render_project_card(project: EmergencyProject) -> str:
     """
 
 
+def render_project_compact_card(project: EmergencyProject) -> str:
+    return f"""
+      <article class="project-compact-card">
+        <div class="project-compact-top">
+          <span class="project-compact-number">{project.number:02d}</span>
+          <span class="project-compact-field">{safe_text(project.field)}</span>
+          <strong>{project.progress_pct}%</strong>
+        </div>
+        <h3>{safe_text(project.title)}</h3>
+        <div class="project-compact-progress" style="--pct:{project.progress_pct};">
+          <span></span>
+        </div>
+        <dl class="project-compact-meta">
+          <div>
+            <dt>소관</dt>
+            <dd>{safe_text(project.department)}</dd>
+          </div>
+          <div>
+            <dt>예산</dt>
+            <dd>{safe_text(project.budget)}</dd>
+          </div>
+        </dl>
+        <div class="project-compact-status">
+          <span>{safe_text(project.status)}</span>
+          <em>{safe_text(project.latest_update)}</em>
+        </div>
+        <p>{safe_text(project.milestone)}</p>
+      </article>
+    """
+
+
 def render_project_dashboard(projects: list[EmergencyProject]) -> None:
     budget_projects = [project for project in projects if project.budget != "비예산"]
-    html_cards = "\n".join(render_project_card(project) for project in projects)
+    project_layout = active_project_layout()
+    html_cards = "\n".join(
+        render_project_compact_card(project) if project_layout == "compact" else render_project_card(project)
+        for project in projects
+    )
+    detail_class = "active" if project_layout == "detail" else ""
+    compact_class = "active" if project_layout == "compact" else ""
+    board_class = "project-board compact" if project_layout == "compact" else "project-board"
+    grid_class = "project-compact-grid" if project_layout == "compact" else "project-grid"
     st.html(
         f"""
-        <section class="project-board notranslate" translate="no" lang="ko">
+        <section class="{board_class} notranslate" translate="no" lang="ko">
           <div class="project-board-head">
             <div>
               <span class="project-kicker">매일 부산광역시장 직접 점검</span>
               <h2>민생100일 비상대책 추진상황</h2>
+            </div>
+            <div class="project-view-toggle" aria-label="추진상황 보기 방식">
+              <a class="{detail_class}" href="?view=check&layout=detail">상세형</a>
+              <a class="{compact_class}" href="?view=check&layout=compact">압축형</a>
             </div>
           </div>
           <div class="project-summary">
@@ -1064,7 +1114,7 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
             <i></i>
             <span>부산광역시장 일일 점검</span>
           </div>
-          <div class="project-grid">
+          <div class="{grid_class}">
             {html_cards}
           </div>
           <div class="project-source">
@@ -1365,6 +1415,33 @@ def inject_css() -> None:
           letter-spacing: 0;
         }
 
+        .project-view-toggle {
+          display: inline-flex;
+          gap: 8px;
+          padding: 6px;
+          border-radius: 999px;
+          background: #eef3f8;
+          border: 1px solid #d8e0e7;
+        }
+
+        .project-view-toggle a {
+          min-width: 82px;
+          padding: 10px 16px;
+          border-radius: 999px;
+          color: #4b5c6e;
+          font-size: 15px;
+          font-weight: 900;
+          line-height: 1;
+          text-align: center;
+          text-decoration: none;
+        }
+
+        .project-view-toggle a.active {
+          background: linear-gradient(135deg, #f05b6d 0%, #ff9d1b 100%);
+          color: #fff;
+          box-shadow: 0 8px 18px rgba(220, 82, 52, 0.22);
+        }
+
         .project-summary {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1653,6 +1730,217 @@ def inject_css() -> None:
           color: #627181;
           font-size: 13px;
           font-weight: 800;
+        }
+
+        .project-board.compact {
+          max-width: 1840px;
+          padding: 0 28px 28px;
+        }
+
+        .project-board.compact .project-board-head {
+          padding-top: 14px;
+        }
+
+        .project-board.compact .project-summary {
+          gap: 10px;
+          margin: 12px 0 12px;
+        }
+
+        .project-board.compact .project-summary div {
+          min-height: 62px;
+          padding: 12px 16px;
+          border-radius: 14px;
+        }
+
+        .project-board.compact .project-summary span {
+          margin-bottom: 4px;
+          font-size: 12px;
+        }
+
+        .project-board.compact .project-summary strong {
+          font-size: 19px;
+        }
+
+        .project-board.compact .project-flow {
+          margin-bottom: 14px;
+          font-size: 13px;
+        }
+
+        .project-board.compact .project-flow span {
+          padding: 7px 11px;
+        }
+
+        .project-compact-grid {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .project-compact-card {
+          min-height: 212px;
+          padding: 16px;
+          border-radius: 16px;
+          background:
+            radial-gradient(circle at 92% 12%, rgba(255, 255, 255, 0.2), transparent 30%),
+            linear-gradient(145deg, #22338f 0%, #15296e 50%, #163e7a 100%);
+          color: #fff;
+          box-shadow: 0 12px 26px rgba(7, 18, 45, 0.16);
+          box-sizing: border-box;
+        }
+
+        .project-compact-card:nth-child(4n+2) {
+          background:
+            radial-gradient(circle at 92% 12%, rgba(255, 255, 255, 0.2), transparent 30%),
+            linear-gradient(145deg, #0d7f7c 0%, #176379 50%, #194c89 100%);
+        }
+
+        .project-compact-card:nth-child(4n+3) {
+          background:
+            radial-gradient(circle at 92% 12%, rgba(255, 255, 255, 0.2), transparent 30%),
+            linear-gradient(145deg, #b33b65 0%, #8f3c88 45%, #284894 100%);
+        }
+
+        .project-compact-card:nth-child(4n) {
+          background:
+            radial-gradient(circle at 92% 12%, rgba(255, 255, 255, 0.2), transparent 30%),
+            linear-gradient(145deg, #315f88 0%, #22557b 46%, #11415f 100%);
+        }
+
+        .project-compact-top {
+          display: grid;
+          grid-template-columns: 34px minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 11px;
+        }
+
+        .project-compact-number {
+          width: 34px;
+          height: 34px;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.18);
+          border: 1px solid rgba(255, 255, 255, 0.28);
+          font-size: 13px;
+          font-weight: 900;
+        }
+
+        .project-compact-field {
+          min-width: 0;
+          overflow: hidden;
+          color: rgba(255, 255, 255, 0.82);
+          font-size: 12px;
+          font-weight: 900;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-compact-top strong {
+          color: #3eeadf;
+          font-size: 16px;
+          font-weight: 900;
+        }
+
+        .project-compact-card h3 {
+          min-height: 48px;
+          margin: 0 0 12px;
+          color: #fff;
+          font-size: 18px;
+          font-weight: 900;
+          line-height: 1.33;
+          word-break: keep-all;
+        }
+
+        .project-compact-progress {
+          height: 8px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.18);
+        }
+
+        .project-compact-progress span {
+          display: block;
+          width: calc(var(--pct) * 1%);
+          height: 100%;
+          border-radius: inherit;
+          background: #3eeadf;
+        }
+
+        .project-compact-meta {
+          display: grid;
+          grid-template-columns: 1fr 0.72fr;
+          gap: 8px;
+          margin: 12px 0 10px;
+        }
+
+        .project-compact-meta div {
+          min-width: 0;
+          padding: 9px 10px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.12);
+        }
+
+        .project-compact-meta dt {
+          margin: 0 0 4px;
+          color: rgba(255, 255, 255, 0.64);
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .project-compact-meta dd {
+          margin: 0;
+          overflow: hidden;
+          color: #fff;
+          font-size: 12px;
+          font-weight: 900;
+          line-height: 1.25;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-compact-status {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 10px;
+          padding: 8px 10px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.12);
+        }
+
+        .project-compact-status span {
+          color: #fff;
+          font-size: 13px;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .project-compact-status em {
+          overflow: hidden;
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 11px;
+          font-style: normal;
+          font-weight: 800;
+          text-align: right;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-compact-card p {
+          display: -webkit-box;
+          min-height: 34px;
+          margin: 0;
+          overflow: hidden;
+          color: rgba(255, 255, 255, 0.82);
+          font-size: 12px;
+          font-weight: 800;
+          line-height: 1.42;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          word-break: keep-all;
         }
 
         .status-strip {
@@ -2766,6 +3054,10 @@ def inject_css() -> None:
             font-size: 24px;
           }
 
+          .project-view-toggle {
+            margin-top: 14px;
+          }
+
           .project-board-head p {
             margin-top: 10px;
             font-size: 13px;
@@ -2798,6 +3090,20 @@ def inject_css() -> None:
           .project-grid {
             grid-template-columns: repeat(2, minmax(360px, 1fr));
             gap: 12px;
+          }
+
+          .project-compact-grid {
+            grid-template-columns: repeat(2, minmax(260px, 1fr));
+            gap: 10px;
+          }
+
+          .project-board.compact {
+            padding: 0 16px 28px;
+            overflow-x: auto;
+          }
+
+          .project-compact-card {
+            min-height: 210px;
           }
 
           .project-card {
