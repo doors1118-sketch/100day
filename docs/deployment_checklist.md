@@ -41,9 +41,12 @@ sudo -u minsaeng /opt/minsaeng100/venv/bin/python /opt/minsaeng100/scripts/init_
 ```bash
 sudo cp /opt/minsaeng100/deploy/systemd/minsaeng100-api.service /etc/systemd/system/
 sudo cp /opt/minsaeng100/deploy/systemd/minsaeng100-dashboard.service /etc/systemd/system/
+sudo cp /opt/minsaeng100/deploy/systemd/minsaeng100-collector.service /etc/systemd/system/
+sudo cp /opt/minsaeng100/deploy/systemd/minsaeng100-collector.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now minsaeng100-api.service
 sudo systemctl enable --now minsaeng100-dashboard.service
+sudo systemctl enable --now minsaeng100-collector.timer
 ```
 
 상태 확인:
@@ -51,6 +54,8 @@ sudo systemctl enable --now minsaeng100-dashboard.service
 ```bash
 systemctl status minsaeng100-api.service --no-pager
 systemctl status minsaeng100-dashboard.service --no-pager
+systemctl list-timers minsaeng100-collector.timer --no-pager
+journalctl -u minsaeng100-collector.service -n 80 --no-pager
 curl -fsS http://127.0.0.1:8010/health
 ```
 

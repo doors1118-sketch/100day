@@ -1,0 +1,15 @@
+[Unit]
+Description=Minsaeng100 indicator collector
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=minsaeng
+Group=minsaeng
+WorkingDirectory=/opt/minsaeng100
+Environment=MINSAENG100_HOME=/opt/minsaeng100
+Environment=MINSAENG100_DB=/opt/minsaeng100/data/minsaeng100.sqlite
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/etc/minsaeng100/collector.env
+ExecStart=/opt/minsaeng100/venv/bin/python /opt/minsaeng100/scripts/collect_all.py

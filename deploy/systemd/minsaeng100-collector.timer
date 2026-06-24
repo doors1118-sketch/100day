@@ -1,0 +1,11 @@
+[Unit]
+Description=Minsaeng100 daily indicator collection timer
+
+[Timer]
+OnCalendar=*-*-* 06:20:00
+RandomizedDelaySec=20m
+Persistent=true
+Unit=minsaeng100-collector.service
+
+[Install]
+WantedBy=timers.target
