@@ -92,3 +92,40 @@ CREATE TABLE IF NOT EXISTS import_runs (
 CREATE INDEX IF NOT EXISTS idx_observations_indicator_period
 ON observations(indicator_id, base_period);
 
+CREATE TABLE IF NOT EXISTS admin_users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('admin', 'department', 'viewer')),
+    department TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_project_permissions (
+    user_id INTEGER NOT NULL,
+    project_id TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(user_id, project_id),
+    FOREIGN KEY(user_id) REFERENCES admin_users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS project_updates (
+    update_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    progress_pct REAL NOT NULL,
+    risk_level TEXT NOT NULL,
+    budget_status TEXT NOT NULL,
+    today_result TEXT,
+    next_plan TEXT,
+    issue_text TEXT,
+    public_summary TEXT,
+    created_by INTEGER,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(created_by) REFERENCES admin_users(user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_updates_latest
+ON project_updates(project_id, created_at DESC, update_id DESC);

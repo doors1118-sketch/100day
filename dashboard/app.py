@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import html
+import base64
+import binascii
+import hmac
 import hashlib
 import json
 import math
 import os
+import secrets
 import sqlite3
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -23,6 +27,16 @@ DB_PATH = Path(os.getenv("MINSAENG100_DB", APP_HOME / "data" / "minsaeng100.sqli
 MINSAENG_START_DATE = date(2026, 7, 1)
 MINSAENG_TOTAL_DAYS = 100
 KOREA_TZ = ZoneInfo("Asia/Seoul")
+
+
+def table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    return (
+        conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table_name,),
+        ).fetchone()
+        is not None
+    )
 
 
 st.set_page_config(
@@ -44,6 +58,9 @@ def load_catalog() -> pd.DataFrame:
 def load_observations() -> pd.DataFrame:
     if not DB_PATH.exists():
         return pd.DataFrame()
+    with sqlite3.connect(DB_PATH) as conn:
+        if not table_exists(conn, "observations") or not table_exists(conn, "indicators"):
+            return pd.DataFrame()
     sql = """
     SELECT o.indicator_id, i.name, i.panel, i.dashboard_role, i.direction,
            o.base_period, o.value, o.unit, o.region, o.source, o.source_ref,
@@ -61,13 +78,21 @@ def load_manual_tables() -> tuple[pd.DataFrame, pd.DataFrame]:
     if not DB_PATH.exists():
         return pd.DataFrame(), pd.DataFrame()
     with sqlite3.connect(DB_PATH) as conn:
-        credit = pd.read_sql_query(
-            "SELECT * FROM manual_credit_guarantee_monthly ORDER BY base_month DESC",
-            conn,
+        credit = (
+            pd.read_sql_query(
+                "SELECT * FROM manual_credit_guarantee_monthly ORDER BY base_month DESC",
+                conn,
+            )
+            if table_exists(conn, "manual_credit_guarantee_monthly")
+            else pd.DataFrame()
         )
-        policy = pd.read_sql_query(
-            "SELECT * FROM manual_policy_fund_monthly ORDER BY base_month DESC",
-            conn,
+        policy = (
+            pd.read_sql_query(
+                "SELECT * FROM manual_policy_fund_monthly ORDER BY base_month DESC",
+                conn,
+            )
+            if table_exists(conn, "manual_policy_fund_monthly")
+            else pd.DataFrame()
         )
     return credit, policy
 
@@ -77,12 +102,71 @@ def load_import_runs() -> pd.DataFrame:
     if not DB_PATH.exists():
         return pd.DataFrame()
     with sqlite3.connect(DB_PATH) as conn:
+        if not table_exists(conn, "import_runs"):
+            return pd.DataFrame()
         return pd.read_sql_query(
             """
             SELECT source, source_ref, status, rows_written, started_at, finished_at, message
             FROM import_runs
             ORDER BY import_run_id DESC
             LIMIT 10
+            """,
+            conn,
+        )
+
+
+@st.cache_data(ttl=60)
+def load_project_updates() -> pd.DataFrame:
+    if not DB_PATH.exists():
+        return pd.DataFrame()
+    with sqlite3.connect(DB_PATH) as conn:
+        return pd.read_sql_query(
+            """
+            SELECT
+                pu.update_id,
+                pu.project_id,
+                pu.status,
+                pu.progress_pct,
+                pu.risk_level,
+                pu.budget_status,
+                pu.today_result,
+                pu.next_plan,
+                pu.issue_text,
+                pu.public_summary,
+                pu.created_at,
+                au.username AS input_user,
+                au.department AS input_department
+            FROM project_updates pu
+            LEFT JOIN admin_users au ON au.user_id = pu.created_by
+            ORDER BY pu.created_at DESC, pu.update_id DESC
+            """,
+            conn,
+        )
+
+
+def load_admin_users() -> pd.DataFrame:
+    if not DB_PATH.exists():
+        return pd.DataFrame()
+    with connect_db() as conn:
+        return pd.read_sql_query(
+            """
+            SELECT user_id, username, role, department, is_active, created_at, updated_at
+            FROM admin_users
+            ORDER BY user_id
+            """,
+            conn,
+        )
+
+
+def load_user_permissions() -> pd.DataFrame:
+    if not DB_PATH.exists():
+        return pd.DataFrame(columns=["user_id", "project_id"])
+    with connect_db() as conn:
+        return pd.read_sql_query(
+            """
+            SELECT user_id, project_id
+            FROM admin_project_permissions
+            ORDER BY user_id, project_id
             """,
             conn,
         )
@@ -129,6 +213,10 @@ class EmergencyProject:
     progress_pct: int = 0
     latest_update: str = "부서 일일 입력 대기"
     issue: str = "입력 전"
+    budget_status: str = "미입력"
+    risk_level: str = "정상"
+    next_plan: str = ""
+    updated_at: str = ""
 
 
 EMERGENCY_PROJECTS: list[EmergencyProject] = [
@@ -233,6 +321,126 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         "2026.7. TF 신설, 2026.9. 민생경제수사팀 신설 추진",
     ),
 ]
+
+
+PROJECT_STATUS_OPTIONS = ["계획중", "예산편성중", "추진중", "완료"]
+BUDGET_STATUS_OPTIONS = ["미입력", "비예산", "미편성", "요구중", "확보", "집행중", "집행완료"]
+RISK_LEVEL_OPTIONS = ["정상", "주의", "지연"]
+ADMIN_ROLES = {
+    "admin": "관리자",
+    "department": "부서 담당자",
+    "viewer": "조회자",
+}
+PASSWORD_ITERATIONS = 260_000
+
+
+def connect_db() -> sqlite3.Connection:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt,
+        PASSWORD_ITERATIONS,
+    )
+    return (
+        "pbkdf2_sha256$"
+        f"{PASSWORD_ITERATIONS}$"
+        f"{base64.b64encode(salt).decode('ascii')}$"
+        f"{base64.b64encode(digest).decode('ascii')}"
+    )
+
+
+def verify_password(password: str, stored_hash: str) -> bool:
+    try:
+        scheme, iterations_text, salt_text, digest_text = stored_hash.split("$", 3)
+        if scheme != "pbkdf2_sha256":
+            return False
+        iterations = int(iterations_text)
+        salt = base64.b64decode(salt_text)
+        expected = base64.b64decode(digest_text)
+    except (ValueError, TypeError, binascii.Error):
+        return False
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt,
+        iterations,
+    )
+    return hmac.compare_digest(digest, expected)
+
+
+def ensure_admin_schema() -> None:
+    with connect_db() as conn:
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS admin_users (
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL CHECK(role IN ('admin', 'department', 'viewer')),
+                department TEXT,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_project_permissions (
+                user_id INTEGER NOT NULL,
+                project_id TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY(user_id, project_id),
+                FOREIGN KEY(user_id) REFERENCES admin_users(user_id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS project_updates (
+                update_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id TEXT NOT NULL,
+                status TEXT NOT NULL,
+                progress_pct REAL NOT NULL,
+                risk_level TEXT NOT NULL,
+                budget_status TEXT NOT NULL,
+                today_result TEXT,
+                next_plan TEXT,
+                issue_text TEXT,
+                public_summary TEXT,
+                created_by INTEGER,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(created_by) REFERENCES admin_users(user_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_project_updates_latest
+            ON project_updates(project_id, created_at DESC, update_id DESC);
+            """
+        )
+        user_count = conn.execute("SELECT COUNT(*) FROM admin_users").fetchone()[0]
+        initial_password = os.getenv("MINSAENG_ADMIN_PASSWORD", "").strip()
+        if user_count == 0 and initial_password:
+            conn.execute(
+                """
+                INSERT INTO admin_users (
+                    username, password_hash, role, department, is_active, created_at, updated_at
+                )
+                VALUES (?, ?, 'admin', '총괄', 1, ?, ?)
+                """,
+                (
+                    os.getenv("MINSAENG_ADMIN_USER", "admin").strip() or "admin",
+                    hash_password(initial_password),
+                    current_kst_timestamp(),
+                    current_kst_timestamp(),
+                ),
+            )
+
+
+def current_kst_timestamp() -> str:
+    return datetime.now(KOREA_TZ).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def safe_text(value: Any) -> str:
@@ -1574,7 +1782,7 @@ def active_view() -> str:
     raw_view = st.query_params.get("view", "economy")
     if isinstance(raw_view, list):
         raw_view = raw_view[0] if raw_view else "economy"
-    return raw_view if raw_view in {"economy", "check"} else "economy"
+    return raw_view if raw_view in {"economy", "check", "admin"} else "economy"
 
 
 def active_project_layout() -> str:
@@ -1591,7 +1799,93 @@ def nav_class(view: str, current_view: str, base_class: str) -> str:
     return " ".join(classes)
 
 
+def project_title_map(projects: list[EmergencyProject]) -> dict[str, str]:
+    return {project.project_id: f"{project.number:02d}. {project.title}" for project in projects}
+
+
+def compact_text(value: Any, limit: int = 72) -> str:
+    text = "" if value is None or pd.isna(value) else str(value).strip()
+    if not text:
+        return ""
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+def latest_project_update_map(updates: pd.DataFrame) -> dict[str, dict[str, Any]]:
+    if updates.empty:
+        return {}
+    rows = updates.sort_values(["created_at", "update_id"], ascending=[False, False])
+    latest = rows.drop_duplicates("project_id", keep="first")
+    return {str(row["project_id"]): row.to_dict() for _, row in latest.iterrows()}
+
+
+def apply_project_updates(
+    projects: list[EmergencyProject],
+    updates: pd.DataFrame,
+) -> list[EmergencyProject]:
+    latest_map = latest_project_update_map(updates)
+    merged: list[EmergencyProject] = []
+    for project in projects:
+        latest = latest_map.get(project.project_id)
+        if not latest:
+            merged.append(project)
+            continue
+        latest_summary = (
+            compact_text(latest.get("public_summary"))
+            or compact_text(latest.get("today_result"))
+            or "부서 입력 완료"
+        )
+        merged.append(
+            replace(
+                project,
+                status=str(latest.get("status") or project.status),
+                progress_pct=int(round(float(latest.get("progress_pct") or 0))),
+                latest_update=latest_summary,
+                issue=compact_text(latest.get("issue_text"), 96) or "특이사항 없음",
+                budget_status=str(latest.get("budget_status") or project.budget_status),
+                risk_level=str(latest.get("risk_level") or project.risk_level),
+                next_plan=compact_text(latest.get("next_plan"), 96),
+                updated_at=str(latest.get("created_at") or ""),
+            )
+        )
+    return merged
+
+
+def stage_html(current_status: str) -> str:
+    pieces = []
+    for label in PROJECT_STATUS_OPTIONS:
+        class_name = "is-current" if label == current_status else ""
+        pieces.append(f'<span class="{class_name}">{safe_text(label)}</span>')
+    return "\n".join(pieces)
+
+
+def risk_class(risk_level: str) -> str:
+    if risk_level == "지연":
+        return "risk-delay"
+    if risk_level == "주의":
+        return "risk-watch"
+    return "risk-normal"
+
+
 def render_project_card(project: EmergencyProject) -> str:
+    stage_markup = stage_html(project.status)
+    risk_markup = f"""
+      <span class="project-risk {risk_class(project.risk_level)}">{safe_text(project.risk_level)}</span>
+    """
+    updated_at_markup = (
+        f'<span class="project-updated">최근 입력 {safe_text(project.updated_at)}</span>'
+        if project.updated_at
+        else '<span class="project-updated">입력 전</span>'
+    )
+    issue_markup = (
+        f"""
+        <div class="project-milestone project-issue">
+          <span>쟁점·애로사항</span>
+          <strong>{safe_text(project.issue)}</strong>
+        </div>
+        """
+        if project.issue and project.issue != "입력 전"
+        else ""
+    )
     return f"""
       <article class="project-card">
         <div class="project-card-top">
@@ -1599,6 +1893,7 @@ def render_project_card(project: EmergencyProject) -> str:
             <div class="project-card-head">
               <span class="project-number">{project.number:02d}</span>
               <span class="project-field">{safe_text(project.field)}</span>
+              {risk_markup}
             </div>
             <h3>{safe_text(project.title)}</h3>
           </div>
@@ -1618,19 +1913,18 @@ def render_project_card(project: EmergencyProject) -> str:
         </dl>
         <p class="project-feature">{safe_text(project.feature)}</p>
         <div class="project-stage">
-          <span class="is-current">계획 중</span>
-          <span>예산 작업중</span>
-          <span>집행중</span>
-          <span>완료</span>
+          {stage_markup}
         </div>
         <div class="project-check-row">
           <strong>{safe_text(project.status)}</strong>
           <span>{safe_text(project.latest_update)}</span>
         </div>
+        {updated_at_markup}
         <div class="project-milestone">
           <span>추진계획</span>
           <strong>{safe_text(project.milestone)}</strong>
         </div>
+        {issue_markup}
       </article>
     """
 
@@ -1667,7 +1961,15 @@ def render_project_compact_card(project: EmergencyProject) -> str:
 
 
 def render_project_dashboard(projects: list[EmergencyProject]) -> None:
+    updates = load_project_updates()
+    projects = apply_project_updates(projects, updates)
     budget_projects = [project for project in projects if project.budget != "비예산"]
+    updated_project_count = len(latest_project_update_map(updates))
+    avg_progress = (
+        round(sum(project.progress_pct for project in projects) / len(projects), 1)
+        if projects
+        else 0
+    )
     project_layout = active_project_layout()
     html_cards = "\n".join(
         render_project_compact_card(project) if project_layout == "compact" else render_project_card(project)
@@ -1699,12 +2001,12 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
               <strong>1조 4,320.5억원</strong>
             </div>
             <div>
-              <span>예산사업</span>
-              <strong>{len(budget_projects)}개</strong>
+              <span>최신 입력 사업</span>
+              <strong>{updated_project_count}개</strong>
             </div>
             <div>
-              <span>일일 입력</span>
-              <strong>부서 계정 방식</strong>
+              <span>평균 추진률</span>
+              <strong>{avg_progress}%</strong>
             </div>
           </div>
           <div class="project-flow">
@@ -1723,6 +2025,501 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         </section>
         """
     )
+
+
+def admin_user_count() -> int:
+    if not DB_PATH.exists():
+        return 0
+    with connect_db() as conn:
+        return int(conn.execute("SELECT COUNT(*) FROM admin_users").fetchone()[0])
+
+
+def authenticate_user(username: str, password: str) -> dict[str, Any] | None:
+    with connect_db() as conn:
+        row = conn.execute(
+            """
+            SELECT user_id, username, password_hash, role, department, is_active
+            FROM admin_users
+            WHERE username = ?
+            """,
+            (username.strip(),),
+        ).fetchone()
+    if not row or not row["is_active"]:
+        return None
+    if not verify_password(password, row["password_hash"]):
+        return None
+    return {
+        "user_id": int(row["user_id"]),
+        "username": str(row["username"]),
+        "role": str(row["role"]),
+        "department": str(row["department"] or ""),
+    }
+
+
+def current_admin_user() -> dict[str, Any] | None:
+    user = st.session_state.get("admin_user")
+    return user if isinstance(user, dict) else None
+
+
+def project_options(projects: list[EmergencyProject]) -> dict[str, str]:
+    return {project.project_id: f"{project.number:02d}. {project.title}" for project in projects}
+
+
+def allowed_project_ids(user: dict[str, Any], projects: list[EmergencyProject]) -> list[str]:
+    if user["role"] in {"admin", "viewer"}:
+        return [project.project_id for project in projects]
+    with connect_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT project_id
+            FROM admin_project_permissions
+            WHERE user_id = ?
+            ORDER BY project_id
+            """,
+            (user["user_id"],),
+        ).fetchall()
+    assigned = [str(row["project_id"]) for row in rows]
+    if assigned:
+        return assigned
+    department = user.get("department", "")
+    if department:
+        return [
+            project.project_id
+            for project in projects
+            if department in project.department
+        ]
+    return []
+
+
+def latest_update_for_project(project_id: str, updates: pd.DataFrame) -> dict[str, Any] | None:
+    return latest_project_update_map(updates).get(project_id)
+
+
+def insert_project_update(
+    user: dict[str, Any],
+    project_id: str,
+    status: str,
+    progress_pct: float,
+    risk_level: str,
+    budget_status: str,
+    today_result: str,
+    next_plan: str,
+    issue_text: str,
+    public_summary: str,
+) -> None:
+    with connect_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO project_updates (
+                project_id, status, progress_pct, risk_level, budget_status,
+                today_result, next_plan, issue_text, public_summary, created_by, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                project_id,
+                status,
+                float(progress_pct),
+                risk_level,
+                budget_status,
+                today_result.strip(),
+                next_plan.strip(),
+                issue_text.strip(),
+                public_summary.strip(),
+                int(user["user_id"]),
+                current_kst_timestamp(),
+            ),
+        )
+    load_project_updates.clear()
+
+
+def save_user_permissions(user_id: int, project_ids: list[str]) -> None:
+    with connect_db() as conn:
+        conn.execute(
+            "DELETE FROM admin_project_permissions WHERE user_id = ?",
+            (user_id,),
+        )
+        conn.executemany(
+            """
+            INSERT OR IGNORE INTO admin_project_permissions (user_id, project_id)
+            VALUES (?, ?)
+            """,
+            [(user_id, project_id) for project_id in project_ids],
+        )
+
+
+def create_admin_user(
+    username: str,
+    password: str,
+    role: str,
+    department: str,
+    is_active: bool,
+    assigned_project_ids: list[str],
+) -> None:
+    with connect_db() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO admin_users (
+                username, password_hash, role, department, is_active, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                username.strip(),
+                hash_password(password),
+                role,
+                department.strip(),
+                1 if is_active else 0,
+                current_kst_timestamp(),
+                current_kst_timestamp(),
+            ),
+        )
+        user_id = int(cursor.lastrowid)
+    save_user_permissions(user_id, assigned_project_ids)
+
+
+def update_admin_user(
+    user_id: int,
+    role: str,
+    department: str,
+    is_active: bool,
+    assigned_project_ids: list[str],
+    new_password: str = "",
+) -> None:
+    password_sql = ", password_hash = ?" if new_password else ""
+    params: list[Any] = [role, department.strip(), 1 if is_active else 0, current_kst_timestamp()]
+    if new_password:
+        params.append(hash_password(new_password))
+    params.append(user_id)
+    with connect_db() as conn:
+        conn.execute(
+            f"""
+            UPDATE admin_users
+            SET role = ?, department = ?, is_active = ?, updated_at = ?{password_sql}
+            WHERE user_id = ?
+            """,
+            params,
+        )
+    save_user_permissions(user_id, assigned_project_ids)
+
+
+def project_history_table(updates: pd.DataFrame, projects: list[EmergencyProject]) -> pd.DataFrame:
+    if updates.empty:
+        return pd.DataFrame()
+    title_map = project_title_map(projects)
+    table = updates.copy()
+    table["사업명"] = table["project_id"].map(title_map).fillna(table["project_id"])
+    table["입력부서"] = table["input_department"].fillna("")
+    table["입력자"] = table["input_user"].fillna("")
+    table = table.rename(
+        columns={
+            "created_at": "입력일시",
+            "status": "추진상태",
+            "progress_pct": "추진률",
+            "risk_level": "위험도",
+            "budget_status": "예산상태",
+            "today_result": "금일 추진실적",
+            "next_plan": "향후계획",
+            "issue_text": "쟁점·애로사항",
+            "public_summary": "공개 요약",
+        }
+    )
+    return table[
+        [
+            "입력일시",
+            "사업명",
+            "추진상태",
+            "추진률",
+            "위험도",
+            "예산상태",
+            "금일 추진실적",
+            "향후계획",
+            "쟁점·애로사항",
+            "입력부서",
+            "입력자",
+        ]
+    ]
+
+
+def render_login_panel() -> None:
+    st.markdown(
+        """
+        <section class="admin-shell notranslate" translate="no" lang="ko">
+          <div class="admin-title">
+            <span>부서 입력</span>
+            <h2>민생100일 비상대책 추진상황 입력</h2>
+            <p>부서별 계정으로 로그인해 배정된 사업의 상태와 추진실적을 입력합니다.</p>
+          </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+    if admin_user_count() == 0:
+        st.error(
+            "관리자 계정이 아직 생성되지 않았습니다. 서버 환경변수 "
+            "`MINSAENG_ADMIN_PASSWORD` 설정 후 앱을 재시작하면 최초 관리자 계정이 생성됩니다."
+        )
+        return
+    with st.form("admin_login_form"):
+        username = st.text_input("아이디")
+        password = st.text_input("비밀번호", type="password")
+        submitted = st.form_submit_button("로그인", use_container_width=True)
+    if submitted:
+        user = authenticate_user(username, password)
+        if not user:
+            st.error("아이디 또는 비밀번호가 맞지 않거나 비활성 계정입니다.")
+            return
+        st.session_state["admin_user"] = user
+        st.rerun()
+
+
+def render_project_update_input(user: dict[str, Any], projects: list[EmergencyProject]) -> None:
+    options = project_options(projects)
+    allowed_ids = allowed_project_ids(user, projects)
+    if not allowed_ids:
+        st.warning("입력 권한이 부여된 사업이 없습니다. 관리자에게 사업 권한 배정을 요청해야 합니다.")
+        return
+    allowed_labels = [options[project_id] for project_id in allowed_ids if project_id in options]
+    if not allowed_labels:
+        st.warning("배정된 사업 ID가 현재 사업 목록과 일치하지 않습니다. 관리자 권한을 다시 설정해야 합니다.")
+        return
+    selected_label = st.selectbox(
+        "사업 선택",
+        allowed_labels,
+    )
+    selected_project_id = next(
+        project_id for project_id, label in options.items() if label == selected_label
+    )
+    updates = load_project_updates()
+    latest = latest_update_for_project(selected_project_id, updates) or {}
+    status_default = str(latest.get("status") or "계획중")
+    budget_default = str(latest.get("budget_status") or "미입력")
+    risk_default = str(latest.get("risk_level") or "정상")
+
+    with st.form("project_update_form", clear_on_submit=False):
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            status = st.selectbox(
+                "추진상태",
+                PROJECT_STATUS_OPTIONS,
+                index=PROJECT_STATUS_OPTIONS.index(status_default)
+                if status_default in PROJECT_STATUS_OPTIONS
+                else 0,
+            )
+        with col2:
+            budget_status = st.selectbox(
+                "예산상태",
+                BUDGET_STATUS_OPTIONS,
+                index=BUDGET_STATUS_OPTIONS.index(budget_default)
+                if budget_default in BUDGET_STATUS_OPTIONS
+                else 0,
+            )
+        with col3:
+            risk_level = st.selectbox(
+                "위험도",
+                RISK_LEVEL_OPTIONS,
+                index=RISK_LEVEL_OPTIONS.index(risk_default)
+                if risk_default in RISK_LEVEL_OPTIONS
+                else 0,
+            )
+        progress_pct = st.number_input(
+            "추진률(%)",
+            min_value=0.0,
+            max_value=100.0,
+            value=float(latest.get("progress_pct") or 0),
+            step=1.0,
+        )
+        today_result = st.text_area(
+            "금일 추진실적",
+            value=str(latest.get("today_result") or ""),
+            height=110,
+            placeholder="오늘 처리한 협의, 예산 작업, 신청·접수, 지급실적, 현장 조치 등을 입력",
+        )
+        next_plan = st.text_area(
+            "향후계획",
+            value=str(latest.get("next_plan") or ""),
+            height=90,
+            placeholder="다음 조치 일정, 추가 협의, 보완 계획 등을 입력",
+        )
+        issue_text = st.text_area(
+            "쟁점·애로사항",
+            value=str(latest.get("issue_text") or ""),
+            height=90,
+            placeholder="예산, 조례, 기관협의, 민원, 일정 지연 등 점검 필요 사항",
+        )
+        public_summary = st.text_input(
+            "상황판 공개 요약",
+            value=str(latest.get("public_summary") or ""),
+            placeholder="카드에 짧게 노출할 문장. 미입력 시 금일 추진실적 앞부분을 사용",
+        )
+        submitted = st.form_submit_button("추진실적 저장", use_container_width=True)
+    if submitted:
+        insert_project_update(
+            user=user,
+            project_id=selected_project_id,
+            status=status,
+            progress_pct=progress_pct,
+            risk_level=risk_level,
+            budget_status=budget_status,
+            today_result=today_result,
+            next_plan=next_plan,
+            issue_text=issue_text,
+            public_summary=public_summary,
+        )
+        st.success("추진실적을 저장했습니다. 추진상황 화면에는 최신 입력값이 반영됩니다.")
+        st.rerun()
+
+
+def render_user_management(projects: list[EmergencyProject]) -> None:
+    users = load_admin_users()
+    permissions = load_user_permissions()
+    options = project_options(projects)
+
+    st.subheader("계정 생성")
+    with st.form("create_user_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            username = st.text_input("신규 아이디")
+            password = st.text_input("초기 비밀번호", type="password")
+            department = st.text_input("부서명")
+        with col2:
+            role_label = st.selectbox("권한", list(ADMIN_ROLES.values()), index=1)
+            role = next(key for key, value in ADMIN_ROLES.items() if value == role_label)
+            is_active = st.checkbox("활성 계정", value=True)
+            assigned_labels = st.multiselect(
+                "배정 사업",
+                list(options.values()),
+                help="관리자는 전체 사업 접근이 가능하지만, 부서 담당자는 배정 사업만 입력 가능합니다.",
+            )
+        submitted = st.form_submit_button("계정 생성", use_container_width=True)
+    if submitted:
+        if not username.strip() or not password:
+            st.error("아이디와 초기 비밀번호는 필수입니다.")
+        else:
+            assigned_project_ids = [
+                project_id for project_id, label in options.items() if label in assigned_labels
+            ]
+            try:
+                create_admin_user(username, password, role, department, is_active, assigned_project_ids)
+                st.success("계정을 생성했습니다.")
+                st.rerun()
+            except sqlite3.IntegrityError:
+                st.error("이미 존재하는 아이디입니다.")
+
+    st.subheader("계정 수정")
+    if users.empty:
+        st.info("등록된 계정이 없습니다.")
+        return
+    user_labels = [f"{row.username} ({ADMIN_ROLES.get(row.role, row.role)})" for row in users.itertuples()]
+    selected = st.selectbox("수정할 계정", user_labels)
+    selected_index = user_labels.index(selected)
+    selected_user = users.iloc[selected_index]
+    selected_user_id = int(selected_user["user_id"])
+    assigned_ids = permissions[permissions["user_id"].eq(selected_user_id)]["project_id"].tolist()
+    assigned_defaults = [options[project_id] for project_id in assigned_ids if project_id in options]
+
+    with st.form("edit_user_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            role_label = st.selectbox(
+                "권한 변경",
+                list(ADMIN_ROLES.values()),
+                index=list(ADMIN_ROLES).index(str(selected_user["role"])),
+            )
+            role = next(key for key, value in ADMIN_ROLES.items() if value == role_label)
+            department = st.text_input("부서명 변경", value=str(selected_user.get("department") or ""))
+        with col2:
+            is_active = st.checkbox("활성 상태", value=bool(selected_user["is_active"]))
+            new_password = st.text_input("비밀번호 재설정", type="password", placeholder="변경 시에만 입력")
+            assigned_labels = st.multiselect("배정 사업 변경", list(options.values()), default=assigned_defaults)
+        submitted = st.form_submit_button("계정 수정 저장", use_container_width=True)
+    if submitted:
+        assigned_project_ids = [
+            project_id for project_id, label in options.items() if label in assigned_labels
+        ]
+        update_admin_user(
+            selected_user_id,
+            role,
+            department,
+            is_active,
+            assigned_project_ids,
+            new_password,
+        )
+        st.success("계정 정보를 수정했습니다.")
+        st.rerun()
+
+    display_users = users.copy()
+    display_users["권한"] = display_users["role"].map(ADMIN_ROLES)
+    display_users["활성"] = display_users["is_active"].map({1: "활성", 0: "비활성"})
+    st.dataframe(
+        display_users[["username", "권한", "department", "활성", "updated_at"]].rename(
+            columns={
+                "username": "아이디",
+                "department": "부서",
+                "updated_at": "수정일시",
+            }
+        ),
+        hide_index=True,
+        use_container_width=True,
+    )
+
+
+def render_update_history(projects: list[EmergencyProject]) -> None:
+    updates = load_project_updates()
+    table = project_history_table(updates, projects)
+    if table.empty:
+        st.info("아직 입력 이력이 없습니다.")
+        return
+    st.dataframe(table.head(100), hide_index=True, use_container_width=True)
+
+
+def render_admin_dashboard(projects: list[EmergencyProject]) -> None:
+    st.markdown(
+        """
+        <section class="admin-shell notranslate" translate="no" lang="ko">
+          <div class="admin-title">
+            <span>부서 입력 시스템</span>
+            <h2>민생100일 비상대책 추진상황 관리</h2>
+            <p>입력된 내용은 이력으로 보관되며, 추진상황 화면에는 사업별 최신 입력값이 표시됩니다.</p>
+          </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+    user = current_admin_user()
+    if not user:
+        render_login_panel()
+        return
+
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        st.caption("로그인 계정")
+        st.write(f"**{user['username']}**")
+        st.caption(f"{ADMIN_ROLES.get(user['role'], user['role'])} · {user.get('department') or '부서 미지정'}")
+        if st.button("로그아웃", use_container_width=True):
+            st.session_state.pop("admin_user", None)
+            st.rerun()
+    with col2:
+        st.info("상태·추진률·실적은 저장 시점마다 이력으로 남습니다. 오입력 시 기존 이력을 수정하지 말고 새 이력으로 정정 입력하는 방식입니다.")
+
+    if user["role"] == "viewer":
+        render_update_history(projects)
+        return
+
+    if user["role"] == "admin":
+        tabs = st.tabs(["추진실적 입력", "계정 관리", "입력 이력"])
+        with tabs[0]:
+            render_project_update_input(user, projects)
+        with tabs[1]:
+            render_user_management(projects)
+        with tabs[2]:
+            render_update_history(projects)
+    else:
+        tabs = st.tabs(["추진실적 입력", "입력 이력"])
+        with tabs[0]:
+            render_project_update_input(user, projects)
+        with tabs[1]:
+            render_update_history(projects)
 
 
 def render_trend_chart(observations: pd.DataFrame, indicator_ids: list[str], title: str) -> None:
@@ -2402,6 +3199,30 @@ def inject_css() -> None:
           font-weight: 900;
         }
 
+        .project-risk {
+          display: inline-flex;
+          align-items: center;
+          min-height: 28px;
+          padding: 0 10px;
+          border-radius: 999px;
+          color: #082033;
+          font-size: 12px;
+          font-weight: 900;
+        }
+
+        .project-risk.risk-normal {
+          background: #3eeadf;
+        }
+
+        .project-risk.risk-watch {
+          background: #ffd451;
+        }
+
+        .project-risk.risk-delay {
+          background: #ff776e;
+          color: #fff;
+        }
+
         .project-ring {
           width: 88px;
           height: 88px;
@@ -2510,6 +3331,15 @@ def inject_css() -> None:
           text-align: right;
         }
 
+        .project-updated {
+          display: block;
+          margin: -5px 0 12px;
+          color: rgba(255, 255, 255, 0.62);
+          font-size: 12px;
+          font-weight: 800;
+          text-align: right;
+        }
+
         .project-milestone {
           padding-top: 14px;
           border-top: 1px solid rgba(255, 255, 255, 0.2);
@@ -2532,11 +3362,74 @@ def inject_css() -> None:
           word-break: keep-all;
         }
 
+        .project-issue {
+          margin-top: 12px;
+        }
+
         .project-source {
           margin: 20px 0 0;
           color: #627181;
           font-size: 13px;
           font-weight: 800;
+        }
+
+        .admin-shell {
+          width: calc(100% - 72px);
+          max-width: 1500px;
+          margin: 38px auto 22px;
+        }
+
+        .admin-title {
+          padding: 28px 30px;
+          border-radius: 20px;
+          background:
+            radial-gradient(circle at 94% 14%, rgba(62, 234, 223, 0.16), transparent 26%),
+            linear-gradient(135deg, #0b1742 0%, #142f73 58%, #1c5a95 100%);
+          color: #fff;
+          box-shadow: 0 18px 38px rgba(8, 20, 54, 0.16);
+        }
+
+        .admin-title span {
+          display: block;
+          margin-bottom: 8px;
+          color: #3eeadf;
+          font-size: 15px;
+          font-weight: 900;
+        }
+
+        .admin-title h2 {
+          margin: 0 0 10px;
+          font-size: 32px;
+          font-weight: 900;
+          letter-spacing: 0;
+        }
+
+        .admin-title p {
+          max-width: 780px;
+          margin: 0;
+          color: rgba(255, 255, 255, 0.78);
+          font-size: 15px;
+          font-weight: 750;
+          line-height: 1.6;
+          word-break: keep-all;
+        }
+
+        div[data-testid="stForm"] {
+          border: 1px solid #d8e0e7;
+          border-radius: 16px;
+          padding: 18px;
+          background: #fff;
+          box-shadow: 0 12px 26px rgba(19, 35, 60, 0.08);
+        }
+
+        div[data-testid="stForm"] label,
+        div[data-testid="stTextInput"] label,
+        div[data-testid="stTextArea"] label,
+        div[data-testid="stSelectbox"] label,
+        div[data-testid="stNumberInput"] label,
+        div[data-testid="stMultiSelect"] label {
+          font-weight: 850;
+          color: #1d2730;
         }
 
         .project-board.compact {
@@ -4222,6 +5115,7 @@ def section(title: str, caption: str, countdown_label: str | None = None) -> Non
 
 
 inject_css()
+ensure_admin_schema()
 
 catalog_df = load_catalog()
 observations_df = load_observations()
@@ -4259,6 +5153,8 @@ if observations_df.empty:
 
 if current_view == "check":
     render_project_dashboard(EMERGENCY_PROJECTS)
+elif current_view == "admin":
+    render_admin_dashboard(EMERGENCY_PROJECTS)
 else:
     manual_cards = make_manual_cards(credit_df, policy_df)
 
