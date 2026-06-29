@@ -129,6 +129,7 @@ def load_project_updates() -> pd.DataFrame:
                 pu.progress_pct,
                 pu.risk_level,
                 pu.budget_status,
+                pu.quantitative_results,
                 pu.today_result,
                 pu.next_plan,
                 pu.issue_text,
@@ -217,6 +218,17 @@ class EmergencyProject:
     risk_level: str = "정상"
     next_plan: str = ""
     updated_at: str = ""
+    quantitative_results: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ProjectMetric:
+    metric_id: str
+    label: str
+    unit: str
+    target_value: float | None
+    target_text: str
+    primary: bool = False
 
 
 EMERGENCY_PROJECTS: list[EmergencyProject] = [
@@ -323,6 +335,68 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
 ]
 
 
+PROJECT_STAGE_MAP: dict[str, tuple[str, ...]] = {
+    "P001": ("MOU 체결", "전산개발", "추경확보", "공고·접수", "대출공급"),
+    "P002": ("지급시스템 검토", "추경확보", "조례개정", "신청접수", "바우처 지급"),
+    "P003": ("기관협의", "세부계획", "추경확보", "신청접수", "지원금 지급"),
+    "P004": ("QR 확대", "시스템 개발", "추경확보", "조례개정", "수수료 감면"),
+    "P005": ("하반기 계획", "추경확보", "정책발표", "캐시백 적용"),
+    "P006": ("사업계획", "추경확보", "조례개정", "쿠폰 발급", "쿠폰 사용"),
+    "P007": ("공실 DB 구축", "건물주 협약", "입주자 선정", "점포 조성", "운영"),
+    "P008": ("수요기관 발굴", "추경확보", "참여자 선발", "일자리 운영"),
+    "P009": ("MOU 체결", "전문인력 모집", "이동상담", "신청지원", "후속조치"),
+    "P010": ("TF 구성", "특사경 지명", "수사공조", "팀 신설", "단속·수사"),
+}
+
+
+PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
+    "P001": (
+        ProjectMetric("loan_amount", "대출실행금액", "만원", 120_000_000, "1조 2,000억원", True),
+        ProjectMetric("beneficiary_count", "지원 소상공인 수", "명", 40_000, "4만명 이상"),
+    ),
+    "P002": (
+        ProjectMetric("voucher_amount", "바우처 지급액", "만원", 5_600_000, "560억원", True),
+        ProjectMetric("voucher_places", "바우처 지급 개소", "개소", 280_000, "28만개소"),
+    ),
+    "P003": (
+        ProjectMetric("fuel_subsidy_amount", "유가연동보조금 지급액", "만원", 4_000_000, "400억원", True),
+        ProjectMetric("truck_insurance_amount", "화물차 보험료 지원액", "만원", 600_000, "60억원"),
+        ProjectMetric("truck_insurance_vehicles", "화물차 보험료 지원 대수", "대", 30_000, "30,000대"),
+        ProjectMetric("accident_insurance_amount", "산재보험료 지원액", "만원", 60_000, "6억원"),
+        ProjectMetric("accident_insurance_people", "산재보험료 지원 인원", "명", 3_000, "3,000명"),
+    ),
+    "P004": (
+        ProjectMetric("qr_merchant_increase", "QR 등록 가맹점 증가 수", "개소", 4_000, "+4,000개소", True),
+        ProjectMetric("fee_reduction_amount", "카드결제 수수료 감면액", "만원", 125_000, "12.5억원"),
+        ProjectMetric("fee_reduction_merchants", "수수료 감면 적용 가맹점 수", "개소", 140_000, "14만개소"),
+    ),
+    "P005": (
+        ProjectMetric("cashback_amount", "상향 캐시백 집행액", "만원", 5_130_000, "513억원", True),
+    ),
+    "P006": (
+        ProjectMetric("delivery_coupon_amount", "공공배달 쿠폰 지급액", "만원", 600_000, "60억원", True),
+        ProjectMetric("qr_coupon_amount", "QR 결제 쿠폰 지급액", "만원", 200_000, "20억원"),
+        ProjectMetric("coupon_used_count", "쿠폰 사용 건수", "건", None, "부서 목표 입력"),
+    ),
+    "P007": (
+        ProjectMetric("vacant_store_count", "빈점포 활용 현황", "개소", 50, "50개소", True),
+    ),
+    "P008": (
+        ProjectMetric("guardian_people", "민생지킴이 투입 인원", "명", 500, "500명", True),
+        ProjectMetric("public_job_people", "공공일자리 투입 인원", "명", 4_850, "4,850명"),
+    ),
+    "P009": (
+        ProjectMetric("support_cases", "소상공인 지원현황", "건", 200, "200건", True),
+        ProjectMetric("application_cost_cases", "신청비용 지원 건수", "건", 180, "180건"),
+    ),
+    "P010": (
+        ProjectMetric("joint_investigation_cases", "합동수사실적", "건", None, "부서 목표 입력", True),
+        ProjectMetric("report_consult_cases", "신고·상담 접수 건수", "건", None, "부서 목표 입력"),
+        ProjectMetric("relief_link_cases", "피해구제 연계 건수", "건", None, "부서 목표 입력"),
+    ),
+}
+
+
 PROJECT_STATUS_OPTIONS = ["계획중", "예산편성중", "추진중", "완료"]
 BUDGET_STATUS_OPTIONS = ["미입력", "비예산", "미편성", "요구중", "확보", "집행중", "집행완료"]
 RISK_LEVEL_OPTIONS = ["정상", "주의", "지연"]
@@ -407,6 +481,7 @@ def ensure_admin_schema() -> None:
                 progress_pct REAL NOT NULL,
                 risk_level TEXT NOT NULL,
                 budget_status TEXT NOT NULL,
+                quantitative_results TEXT,
                 today_result TEXT,
                 next_plan TEXT,
                 issue_text TEXT,
@@ -420,6 +495,12 @@ def ensure_admin_schema() -> None:
             ON project_updates(project_id, created_at DESC, update_id DESC);
             """
         )
+        project_update_columns = {
+            str(row["name"])
+            for row in conn.execute("PRAGMA table_info(project_updates)").fetchall()
+        }
+        if "quantitative_results" not in project_update_columns:
+            conn.execute("ALTER TABLE project_updates ADD COLUMN quantitative_results TEXT")
         user_count = conn.execute("SELECT COUNT(*) FROM admin_users").fetchone()[0]
         initial_password = os.getenv("MINSAENG_ADMIN_PASSWORD", "").strip()
         if user_count == 0 and initial_password:
@@ -1818,6 +1899,135 @@ def latest_project_update_map(updates: pd.DataFrame) -> dict[str, dict[str, Any]
     return {str(row["project_id"]): row.to_dict() for _, row in latest.iterrows()}
 
 
+def project_stages(project_id: str) -> tuple[str, ...]:
+    return PROJECT_STAGE_MAP.get(project_id, tuple(PROJECT_STATUS_OPTIONS))
+
+
+def project_metrics(project_id: str) -> tuple[ProjectMetric, ...]:
+    return PROJECT_METRIC_MAP.get(project_id, ())
+
+
+def parse_quantitative_results(value: Any) -> dict[str, float]:
+    if isinstance(value, dict):
+        raw = value
+    elif value is None:
+        return {}
+    elif isinstance(value, str) and value.strip() == "":
+        return {}
+    else:
+        try:
+            if bool(pd.isna(value)):
+                return {}
+        except (TypeError, ValueError):
+            pass
+        try:
+            raw = json.loads(str(value))
+        except (TypeError, json.JSONDecodeError):
+            return {}
+    results: dict[str, float] = {}
+    for key, raw_value in raw.items():
+        try:
+            number = float(raw_value)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(number):
+            results[str(key)] = max(number, 0.0)
+    return results
+
+
+def metric_current(project: EmergencyProject, metric: ProjectMetric) -> float | None:
+    value = project.quantitative_results.get(metric.metric_id)
+    if value is None:
+        return None
+    return float(value)
+
+
+def metric_pct(current: float | None, target: float | None) -> float | None:
+    if current is None or target is None or target <= 0:
+        return None
+    return max(0.0, min((current / target) * 100, 100.0))
+
+
+def format_metric_value(value: float | None, unit: str, compact: bool = False) -> str:
+    if value is None:
+        return "입력 대기"
+    if unit == "만원":
+        if value >= 100_000_000:
+            trillion = int(value // 100_000_000)
+            billion_krw = round((value % 100_000_000) / 10_000, 1)
+            if billion_krw:
+                return f"{trillion}조 {billion_krw:,.1f}억원"
+            return f"{trillion}조원"
+        if value >= 10_000:
+            billion_krw = value / 10_000
+            return f"{billion_krw:,.1f}억원" if billion_krw % 1 else f"{int(billion_krw):,}억원"
+        return f"{value:,.0f}만원"
+    suffix = unit
+    if compact and value >= 10_000:
+        return f"{value / 10_000:,.1f}만{suffix}"
+    return f"{value:,.0f}{suffix}"
+
+
+def primary_metric(project: EmergencyProject) -> ProjectMetric | None:
+    metrics = project_metrics(project.project_id)
+    for metric in metrics:
+        if metric.primary:
+            return metric
+    return metrics[0] if metrics else None
+
+
+def metric_rows_html(project: EmergencyProject) -> str:
+    rows = []
+    for metric in project_metrics(project.project_id):
+        current = metric_current(project, metric)
+        pct = metric_pct(current, metric.target_value)
+        pct_text = f"{pct:.1f}%" if pct is not None else "목표 미설정"
+        current_text = format_metric_value(current, metric.unit, compact=True)
+        rows.append(
+            f"""
+            <div class="metric-row">
+              <span>{safe_text(metric.label)}</span>
+              <strong>{safe_text(current_text)}</strong>
+              <em>목표 {safe_text(metric.target_text)}</em>
+              <b>{safe_text(pct_text)}</b>
+            </div>
+            """
+        )
+    return "\n".join(rows)
+
+
+def metric_panel_html(project: EmergencyProject) -> str:
+    metric = primary_metric(project)
+    if metric is None:
+        return ""
+    current = metric_current(project, metric)
+    pct = metric_pct(current, metric.target_value)
+    bar_pct = 0 if pct is None else pct
+    pct_text = f"{pct:.1f}%" if pct is not None else "목표 미설정"
+    current_text = format_metric_value(current, metric.unit)
+    waiting_class = " is-waiting" if current is None else ""
+    return f"""
+      <section class="project-metric-panel">
+        <div class="project-metric-main">
+          <span>현재 실적</span>
+          <strong class="{waiting_class}">{safe_text(current_text)}</strong>
+          <em>{safe_text(metric.label)}</em>
+        </div>
+        <div class="project-metric-target">
+          <span>정량 목표</span>
+          <strong>{safe_text(metric.target_text)}</strong>
+          <em>{safe_text(pct_text)}</em>
+        </div>
+        <div class="project-progress-line" style="--pct:{bar_pct:.3f};">
+          <span></span>
+        </div>
+        <div class="project-metric-rows">
+          {metric_rows_html(project)}
+        </div>
+      </section>
+    """
+
+
 def apply_project_updates(
     projects: list[EmergencyProject],
     updates: pd.DataFrame,
@@ -1845,16 +2055,29 @@ def apply_project_updates(
                 risk_level=str(latest.get("risk_level") or project.risk_level),
                 next_plan=compact_text(latest.get("next_plan"), 96),
                 updated_at=str(latest.get("created_at") or ""),
+                quantitative_results=parse_quantitative_results(
+                    latest.get("quantitative_results")
+                ),
             )
         )
     return merged
 
 
-def stage_html(current_status: str) -> str:
+def stage_html(project_id: str, current_status: str) -> str:
     pieces = []
-    for label in PROJECT_STATUS_OPTIONS:
-        class_name = "is-current" if label == current_status else ""
-        pieces.append(f'<span class="{class_name}">{safe_text(label)}</span>')
+    stages = project_stages(project_id)
+    try:
+        current_index = stages.index(current_status)
+    except ValueError:
+        current_index = -1
+    for idx, label in enumerate(stages):
+        class_names = []
+        if idx < current_index:
+            class_names.append("is-done")
+        if idx == current_index:
+            class_names.append("is-current")
+        class_attr = " ".join(class_names)
+        pieces.append(f'<span class="{class_attr}">{safe_text(label)}</span>')
     return "\n".join(pieces)
 
 
@@ -1867,7 +2090,8 @@ def risk_class(risk_level: str) -> str:
 
 
 def render_project_card(project: EmergencyProject) -> str:
-    stage_markup = stage_html(project.status)
+    stage_markup = stage_html(project.project_id, project.status)
+    metric_markup = metric_panel_html(project)
     risk_markup = f"""
       <span class="project-risk {risk_class(project.risk_level)}">{safe_text(project.risk_level)}</span>
     """
@@ -1897,8 +2121,9 @@ def render_project_card(project: EmergencyProject) -> str:
             </div>
             <h3>{safe_text(project.title)}</h3>
           </div>
-          <div class="project-ring" style="--pct:{project.progress_pct};">
-            <span>{project.progress_pct}%</span>
+          <div class="project-stage-badge">
+            <span>추진률</span>
+            <strong>{project.progress_pct}%</strong>
           </div>
         </div>
         <dl class="project-meta">
@@ -1912,6 +2137,7 @@ def render_project_card(project: EmergencyProject) -> str:
           </div>
         </dl>
         <p class="project-feature">{safe_text(project.feature)}</p>
+        <div class="project-section-label">사업별 진행상태</div>
         <div class="project-stage">
           {stage_markup}
         </div>
@@ -1920,6 +2146,7 @@ def render_project_card(project: EmergencyProject) -> str:
           <span>{safe_text(project.latest_update)}</span>
         </div>
         {updated_at_markup}
+        {metric_markup}
         <div class="project-milestone">
           <span>추진계획</span>
           <strong>{safe_text(project.milestone)}</strong>
@@ -1930,17 +2157,34 @@ def render_project_card(project: EmergencyProject) -> str:
 
 
 def render_project_compact_card(project: EmergencyProject) -> str:
+    metric = primary_metric(project)
+    current_text = "입력 대기"
+    target_text = "목표 미설정"
+    pct = None
+    if metric is not None:
+        current = metric_current(project, metric)
+        current_text = format_metric_value(current, metric.unit, compact=True)
+        target_text = metric.target_text
+        pct = metric_pct(current, metric.target_value)
+    bar_pct = 0 if pct is None else pct
+    pct_text = f"{pct:.1f}%" if pct is not None else "목표 미설정"
     return f"""
       <article class="project-compact-card">
         <div class="project-compact-top">
           <span class="project-compact-number">{project.number:02d}</span>
           <span class="project-compact-field">{safe_text(project.field)}</span>
-          <strong>{project.progress_pct}%</strong>
+          <strong>{safe_text(project.status)}</strong>
         </div>
         <h3>{safe_text(project.title)}</h3>
-        <div class="project-compact-progress" style="--pct:{project.progress_pct};">
+        <div class="project-compact-metric">
+          <span>현재 실적</span>
+          <strong>{safe_text(current_text)}</strong>
+          <em>목표 {safe_text(target_text)}</em>
+        </div>
+        <div class="project-compact-progress" style="--pct:{bar_pct:.3f};">
           <span></span>
         </div>
+        <div class="project-compact-pct">{safe_text(pct_text)}</div>
         <dl class="project-compact-meta">
           <div>
             <dt>소관</dt>
@@ -2102,6 +2346,7 @@ def insert_project_update(
     progress_pct: float,
     risk_level: str,
     budget_status: str,
+    quantitative_results: dict[str, float],
     today_result: str,
     next_plan: str,
     issue_text: str,
@@ -2112,9 +2357,10 @@ def insert_project_update(
             """
             INSERT INTO project_updates (
                 project_id, status, progress_pct, risk_level, budget_status,
-                today_result, next_plan, issue_text, public_summary, created_by, created_at
+                quantitative_results, today_result, next_plan, issue_text, public_summary,
+                created_by, created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 project_id,
@@ -2122,6 +2368,7 @@ def insert_project_update(
                 float(progress_pct),
                 risk_level,
                 budget_status,
+                json.dumps(quantitative_results, ensure_ascii=False),
                 today_result.strip(),
                 next_plan.strip(),
                 issue_text.strip(),
@@ -2290,20 +2537,25 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
     selected_project_id = next(
         project_id for project_id, label in options.items() if label == selected_label
     )
+    selected_project = next(
+        project for project in projects if project.project_id == selected_project_id
+    )
     updates = load_project_updates()
     latest = latest_update_for_project(selected_project_id, updates) or {}
-    status_default = str(latest.get("status") or "계획중")
+    stage_options = list(project_stages(selected_project_id))
+    status_default = str(latest.get("status") or stage_options[0])
     budget_default = str(latest.get("budget_status") or "미입력")
     risk_default = str(latest.get("risk_level") or "정상")
+    latest_quantitative = parse_quantitative_results(latest.get("quantitative_results"))
 
     with st.form("project_update_form", clear_on_submit=False):
         col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
             status = st.selectbox(
                 "추진상태",
-                PROJECT_STATUS_OPTIONS,
-                index=PROJECT_STATUS_OPTIONS.index(status_default)
-                if status_default in PROJECT_STATUS_OPTIONS
+                stage_options,
+                index=stage_options.index(status_default)
+                if status_default in stage_options
                 else 0,
             )
         with col2:
@@ -2329,6 +2581,28 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
             value=float(latest.get("progress_pct") or 0),
             step=1.0,
         )
+        st.markdown("##### 정량 실적")
+        st.caption("금액 지표는 만원 단위로 입력합니다. 상황판에서는 억원·조원 단위로 자동 변환됩니다.")
+        quantitative_results: dict[str, float] = {}
+        metric_list = list(project_metrics(selected_project_id))
+        if metric_list:
+            for idx in range(0, len(metric_list), 2):
+                cols = st.columns(2)
+                for col, metric in zip(cols, metric_list[idx : idx + 2]):
+                    with col:
+                        default_value = float(latest_quantitative.get(metric.metric_id, 0.0))
+                        quantitative_results[metric.metric_id] = float(
+                            st.number_input(
+                                f"{metric.label} ({metric.unit})",
+                                min_value=0.0,
+                                value=default_value,
+                                step=1.0,
+                                help=f"목표: {metric.target_text}",
+                                key=f"metric_{selected_project.project_id}_{metric.metric_id}",
+                            )
+                        )
+        else:
+            st.info("이 사업에는 정량 실적 항목이 설정되어 있지 않습니다.")
         today_result = st.text_area(
             "금일 추진실적",
             value=str(latest.get("today_result") or ""),
@@ -2361,6 +2635,7 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
             progress_pct=progress_pct,
             risk_level=risk_level,
             budget_status=budget_status,
+            quantitative_results=quantitative_results,
             today_result=today_result,
             next_plan=next_plan,
             issue_text=issue_text,
@@ -3641,6 +3916,380 @@ def inject_css() -> None:
           -webkit-box-orient: vertical;
           -webkit-line-clamp: 2;
           word-break: keep-all;
+        }
+
+        .project-card,
+        .project-card:nth-child(4n+2),
+        .project-card:nth-child(4n+3),
+        .project-card:nth-child(4n),
+        .project-compact-card,
+        .project-compact-card:nth-child(4n+2),
+        .project-compact-card:nth-child(4n+3),
+        .project-compact-card:nth-child(4n) {
+          background: #fff;
+          color: #17212b;
+          border: 1px solid #dfe6ef;
+          border-top: 5px solid #3578e5;
+          box-shadow: 0 14px 30px rgba(27, 39, 61, 0.08);
+        }
+
+        .project-card:nth-child(3n+2),
+        .project-compact-card:nth-child(3n+2) {
+          border-top-color: #00a3a3;
+        }
+
+        .project-card:nth-child(3n),
+        .project-compact-card:nth-child(3n) {
+          border-top-color: #f06a43;
+        }
+
+        .project-card h3,
+        .project-compact-card h3 {
+          color: #0f172a;
+          text-shadow: none;
+        }
+
+        .project-card h3 {
+          min-height: 54px;
+          font-size: 25px;
+          line-height: 1.28;
+        }
+
+        .project-card-head {
+          flex-wrap: wrap;
+        }
+
+        .project-number,
+        .project-compact-number {
+          background: #edf4ff;
+          border-color: #b8cef7;
+          color: #2563eb;
+        }
+
+        .project-field,
+        .project-compact-field {
+          background: #f3f6fb;
+          color: #516176;
+        }
+
+        .project-risk.risk-normal {
+          background: #dffcf6;
+          color: #00766e;
+        }
+
+        .project-risk.risk-watch {
+          background: #fff5cc;
+          color: #8a6100;
+        }
+
+        .project-risk.risk-delay {
+          background: #ffe5e2;
+          color: #b42318;
+        }
+
+        .project-stage-badge {
+          min-width: 92px;
+          padding: 10px 12px;
+          border-radius: 16px;
+          background: #f5f8fc;
+          border: 1px solid #dbe5f0;
+          text-align: center;
+        }
+
+        .project-stage-badge span {
+          display: block;
+          margin-bottom: 3px;
+          color: #6a7788;
+          font-size: 12px;
+          font-weight: 900;
+        }
+
+        .project-stage-badge strong {
+          color: #2563eb;
+          font-size: 23px;
+          font-weight: 950;
+        }
+
+        .project-meta div,
+        .project-check-row,
+        .project-compact-meta div,
+        .project-compact-status {
+          background: #f7f9fc;
+          border: 1px solid #e3ebf4;
+        }
+
+        .project-meta dt,
+        .project-milestone span,
+        .project-compact-meta dt {
+          color: #6b7788;
+        }
+
+        .project-meta dd,
+        .project-check-row strong,
+        .project-milestone strong,
+        .project-compact-meta dd,
+        .project-compact-status span {
+          color: #17212b;
+        }
+
+        .project-feature {
+          min-height: 0;
+          color: #536273;
+        }
+
+        .project-section-label {
+          margin: 4px 0 9px;
+          color: #26364a;
+          font-size: 14px;
+          font-weight: 950;
+        }
+
+        .project-stage {
+          grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+          gap: 7px;
+          position: relative;
+        }
+
+        .project-stage span {
+          min-height: 34px;
+          background: #f3f6fb;
+          border: 1px solid #dfe7f0;
+          color: #617086;
+          font-size: 12px;
+        }
+
+        .project-stage span.is-done {
+          background: #e7fbf6;
+          border-color: #91eadb;
+          color: #00796f;
+        }
+
+        .project-stage span.is-current {
+          background: #2563eb;
+          border-color: #2563eb;
+          color: #fff;
+          box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+        }
+
+        .project-check-row {
+          padding: 11px 13px;
+        }
+
+        .project-check-row span,
+        .project-updated,
+        .project-compact-status em {
+          color: #6b7788;
+        }
+
+        .project-metric-panel {
+          margin: 14px 0;
+          padding: 16px;
+          border-radius: 18px;
+          background: linear-gradient(180deg, #f8fbff 0%, #f2f6fb 100%);
+          border: 1px solid #dfe8f4;
+        }
+
+        .project-metric-main {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: end;
+          gap: 10px;
+          margin-bottom: 6px;
+        }
+
+        .project-metric-main span,
+        .project-metric-target span {
+          display: block;
+          color: #6a7788;
+          font-size: 12px;
+          font-weight: 950;
+        }
+
+        .project-metric-main strong {
+          display: block;
+          color: #2563eb;
+          font-size: clamp(28px, 3.2vw, 46px);
+          font-weight: 950;
+          line-height: 1.05;
+          letter-spacing: 0;
+          white-space: nowrap;
+        }
+
+        .project-metric-main strong.is-waiting {
+          color: #8a98aa;
+          font-size: 30px;
+        }
+
+        .project-metric-main em {
+          grid-column: 1 / -1;
+          color: #27364a;
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 900;
+        }
+
+        .project-metric-target {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin: 4px 0 8px;
+          color: #17212b;
+        }
+
+        .project-metric-target strong {
+          color: #17212b;
+          font-size: 15px;
+          font-weight: 950;
+          text-align: right;
+        }
+
+        .project-metric-target em {
+          min-width: 72px;
+          padding: 5px 8px;
+          border-radius: 999px;
+          background: #e8f1ff;
+          color: #2563eb;
+          font-size: 13px;
+          font-style: normal;
+          font-weight: 950;
+          text-align: center;
+        }
+
+        .project-progress-line {
+          height: 12px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #dfe7f0;
+        }
+
+        .project-progress-line span {
+          display: block;
+          width: calc(var(--pct) * 1%);
+          height: 100%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, #2dd4bf 0%, #2563eb 100%);
+        }
+
+        .project-metric-rows {
+          display: grid;
+          gap: 7px;
+          margin-top: 12px;
+        }
+
+        .metric-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1.2fr) auto auto auto;
+          align-items: center;
+          gap: 8px;
+          padding: 7px 9px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.78);
+          border: 1px solid #e4ebf4;
+        }
+
+        .metric-row span {
+          min-width: 0;
+          overflow: hidden;
+          color: #506075;
+          font-size: 12px;
+          font-weight: 900;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .metric-row strong {
+          color: #0f172a;
+          font-size: 13px;
+          font-weight: 950;
+          white-space: nowrap;
+        }
+
+        .metric-row em {
+          color: #7a8798;
+          font-size: 11px;
+          font-style: normal;
+          font-weight: 850;
+          white-space: nowrap;
+        }
+
+        .metric-row b {
+          color: #2563eb;
+          font-size: 12px;
+          font-weight: 950;
+          white-space: nowrap;
+        }
+
+        .project-milestone {
+          border-top-color: #e1e8f0;
+        }
+
+        .project-compact-top {
+          grid-template-columns: 34px minmax(0, 1fr) auto;
+        }
+
+        .project-compact-top strong {
+          max-width: 96px;
+          overflow: hidden;
+          padding: 6px 9px;
+          border-radius: 999px;
+          background: #eef5ff;
+          color: #2563eb;
+          font-size: 12px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-compact-card h3 {
+          color: #0f172a;
+        }
+
+        .project-compact-metric {
+          margin: 8px 0 10px;
+        }
+
+        .project-compact-metric span {
+          display: block;
+          color: #6a7788;
+          font-size: 11px;
+          font-weight: 950;
+        }
+
+        .project-compact-metric strong {
+          display: block;
+          overflow: hidden;
+          color: #2563eb;
+          font-size: 24px;
+          font-weight: 950;
+          line-height: 1.12;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-compact-metric em,
+        .project-compact-pct {
+          display: block;
+          color: #6b7788;
+          font-size: 11px;
+          font-style: normal;
+          font-weight: 850;
+        }
+
+        .project-compact-progress {
+          background: #dfe7f0;
+        }
+
+        .project-compact-progress span {
+          background: linear-gradient(90deg, #2dd4bf 0%, #2563eb 100%);
+        }
+
+        .project-compact-pct {
+          margin-top: 4px;
+          text-align: right;
+        }
+
+        .project-compact-card p {
+          color: #5b697a;
         }
 
         .status-strip {

@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS project_updates (
     progress_pct REAL NOT NULL,
     risk_level TEXT NOT NULL,
     budget_status TEXT NOT NULL,
+    quantitative_results TEXT,
     today_result TEXT,
     next_plan TEXT,
     issue_text TEXT,
