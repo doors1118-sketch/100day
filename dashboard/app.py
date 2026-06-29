@@ -2246,44 +2246,27 @@ def render_project_compact_card(project: EmergencyProject) -> str:
     metric = primary_metric(project)
     current_text = "입력 대기"
     target_text = "목표 미설정"
-    metric_label = "정량 수혜지표"
-    metric_bar_pct = 0.0
-    metric_pct_text = "실적 입력 대기"
     if metric is not None:
         current = metric_current(project, metric)
         current_text = format_metric_value(current, metric.unit, compact=True)
         target_text = metric.target_text
-        metric_label = metric.label
-        pct = metric_pct(current, metric.target_value)
-        if pct is not None:
-            metric_bar_pct = pct
-            metric_pct_text = f"목표 대비 {pct:.1f}%"
     stage_markup = compact_stage_points_html(project)
     hover_detail = compact_hover_detail_html(project)
     return f"""
       <article class="project-compact-card" tabindex="0" aria-label="{safe_text(project.title)} 상세 보기">
         <h3><span>{project.number}</span>{safe_text(project.title)}</h3>
-        <div class="project-compact-kpi" style="--metric-pct:{metric_bar_pct:.3f};">
-          <span>{safe_text(metric_label)}</span>
-          <strong>{safe_text(current_text)}</strong>
-          <em>{safe_text(metric_pct_text)}</em>
-          <i><b></b></i>
-        </div>
         <div class="project-compact-main">
           <div class="project-compact-info">
             <em>{safe_text(project.status)}</em>
             <p><b>목표</b>{safe_text(target_text)}</p>
-            <p><b>실적</b>{safe_text(current_text)}</p>
-            <p><b>담당</b>{safe_text(project.department)}</p>
+            <p class="project-compact-current"><b>실적</b>{safe_text(current_text)}</p>
+            <p><b>예산</b>{safe_text(project.budget)}</p>
+            <p><b>담당부서</b>{safe_text(project.department)}</p>
           </div>
           <div class="project-compact-donut" style="--pct:{project.progress_pct};">
             <span>진행률</span>
             <strong>{project.progress_pct}%</strong>
           </div>
-        </div>
-        <div class="project-compact-meta">
-          <span>예산</span>
-          <strong>{safe_text(project.budget)}</strong>
         </div>
         <div class="project-compact-stage-title">추진상황</div>
         {stage_markup}
@@ -4588,7 +4571,7 @@ def inject_css() -> None:
         .project-compact-card:nth-child(3n+2),
         .project-compact-card:nth-child(3n) {
           position: relative;
-          min-height: 378px;
+          min-height: 338px;
           padding: 20px;
           border: 1px solid #dce7f1;
           border-top: 0;
@@ -4608,7 +4591,7 @@ def inject_css() -> None:
           min-height: 60px;
           align-items: flex-start;
           gap: 6px;
-          margin: 0 0 15px;
+          margin: 0 0 16px;
           color: #162236;
           font-size: 20px;
           font-weight: 950;
@@ -4686,17 +4669,17 @@ def inject_css() -> None:
 
         .project-compact-main {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 88px;
-          gap: 12px;
-          align-items: center;
-          margin-bottom: 12px;
+          grid-template-columns: minmax(0, 1fr) 94px;
+          gap: 14px;
+          align-items: start;
+          margin-bottom: 16px;
         }
 
         .project-compact-donut {
           display: inline-flex;
           justify-self: end;
-          height: 86px;
-          width: 86px;
+          height: 92px;
+          width: 92px;
           align-items: center;
           justify-content: center;
           flex-direction: column;
@@ -4725,13 +4708,16 @@ def inject_css() -> None:
           min-width: 0;
           justify-self: end;
           width: 100%;
+          padding: 10px 12px;
+          border-radius: 13px;
+          background: #f3f8fc;
         }
 
         .project-compact-info em {
           display: inline-flex;
           max-width: 100%;
           margin-bottom: 7px;
-          padding: 4px 10px;
+          padding: 5px 11px;
           overflow: hidden;
           border-radius: 999px;
           background: #00a7a3;
@@ -4747,12 +4733,12 @@ def inject_css() -> None:
         .project-compact-info p {
           display: block;
           min-height: 0;
-          margin: 3px 0;
+          margin: 5px 0;
           overflow: hidden;
           color: #26364c;
-          font-size: 14px;
+          font-size: 15px;
           font-weight: 850;
-          line-height: 1.34;
+          line-height: 1.3;
           text-overflow: ellipsis;
           white-space: nowrap;
           word-break: keep-all;
@@ -4761,9 +4747,15 @@ def inject_css() -> None:
 
         .project-compact-info p b {
           display: inline-block;
-          min-width: 34px;
-          margin-right: 5px;
+          min-width: 66px;
+          margin-right: 7px;
           color: #718096;
+          font-weight: 950;
+        }
+
+        .project-compact-info p.project-compact-current {
+          color: #111827;
+          font-size: 17px;
           font-weight: 950;
         }
 
