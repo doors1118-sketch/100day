@@ -2312,7 +2312,19 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
           <div class="project-board-head">
             <div class="project-board-spacer" aria-hidden="true"></div>
             <div class="project-head-title">
-              <h2>민생100일 비상대책 추진상황</h2>
+              <div class="project-title-art" role="img" aria-label="민생100일 비상조치 추진상황">
+                <div class="title-art-main">
+                  <span class="title-art-minsaeng">민생</span>
+                  <span class="title-art-100">100</span>
+                  <span class="title-art-days">일</span>
+                  <span class="title-art-emergency">비상조치</span>
+                </div>
+                <div class="title-art-sub">
+                  <i aria-hidden="true"></i>
+                  <strong>추진상황</strong>
+                  <i aria-hidden="true"></i>
+                </div>
+              </div>
             </div>
             <div class="project-head-actions">
               <div class="project-overall-progress" style="--pct:{avg_progress};">
@@ -4464,15 +4476,156 @@ def inject_css() -> None:
           display: grid;
           grid-template-columns: minmax(280px, 0.7fr) minmax(620px, 1.15fr) minmax(238px, 0.6fr);
           align-items: center;
-          min-height: 86px;
-          padding: 4px 0 16px;
-          margin-bottom: 4px;
+          min-height: 154px;
+          padding: 0 0 14px;
+          margin-bottom: 0;
           text-align: center;
         }
 
         .project-board.compact .project-board-head h2 {
           font-size: clamp(42px, 3vw, 56px);
           letter-spacing: 0;
+        }
+
+        .project-title-art {
+          position: relative;
+          display: flex;
+          min-height: 138px;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          isolation: isolate;
+          overflow: visible;
+          text-align: center;
+          white-space: nowrap;
+        }
+
+        .project-title-art::before {
+          content: "";
+          position: absolute;
+          z-index: -1;
+          top: 4px;
+          left: 50%;
+          width: min(780px, 110%);
+          height: 120px;
+          transform: translateX(-50%) skewX(-13deg);
+          background:
+            radial-gradient(circle at 12px 12px, rgba(68, 101, 153, 0.22) 0 2px, transparent 2.6px) 0 0 / 18px 18px,
+            linear-gradient(100deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0));
+          opacity: 0.55;
+          pointer-events: none;
+        }
+
+        .title-art-main {
+          display: inline-flex;
+          align-items: flex-end;
+          justify-content: center;
+          gap: 10px;
+          line-height: 0.82;
+        }
+
+        .title-art-minsaeng,
+        .title-art-days,
+        .title-art-emergency {
+          display: inline-block;
+          font-weight: 950;
+          letter-spacing: 0;
+          transform: skewX(-7deg);
+        }
+
+        .title-art-minsaeng {
+          color: #062461;
+          font-size: clamp(38px, 3vw, 56px);
+          text-shadow: 4px 4px 0 rgba(8, 45, 103, 0.10);
+        }
+
+        .title-art-100 {
+          display: inline-block;
+          margin: 0 -4px -6px -2px;
+          background: linear-gradient(112deg, #061e5c 0%, #0d3c7c 42%, #14aeb3 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          filter: drop-shadow(6px 7px 0 rgba(7, 36, 79, 0.13));
+          font-family: var(--font-latin);
+          font-size: clamp(90px, 7vw, 136px);
+          font-style: italic;
+          font-weight: 950;
+          letter-spacing: -9px;
+          line-height: 0.76;
+        }
+
+        .title-art-days {
+          color: #0aa7aa;
+          font-size: clamp(42px, 3.5vw, 66px);
+          text-shadow: 4px 4px 0 rgba(10, 167, 170, 0.12);
+        }
+
+        .title-art-emergency {
+          position: relative;
+          margin-left: 8px;
+          padding: 0.08em 0.28em 0.1em;
+          color: #ef3f43;
+          font-size: clamp(40px, 3.6vw, 70px);
+          text-shadow: 4px 4px 0 rgba(239, 63, 67, 0.10);
+        }
+
+        .title-art-emergency::before {
+          content: "";
+          position: absolute;
+          z-index: -1;
+          inset: -0.08em -0.2em -0.08em -0.08em;
+          transform: skewX(-13deg);
+          border: 5px solid #ef3f43;
+          border-left-width: 7px;
+          background: rgba(255, 255, 255, 0.24);
+          clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%);
+        }
+
+        .title-art-sub {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 22px;
+          margin-top: 8px;
+          color: #062461;
+          font-size: clamp(36px, 3vw, 58px);
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .title-art-sub strong {
+          font-weight: 950;
+          letter-spacing: 0;
+          text-shadow: 4px 4px 0 rgba(8, 45, 103, 0.10);
+        }
+
+        .title-art-sub i {
+          position: relative;
+          display: inline-block;
+          width: clamp(80px, 8vw, 150px);
+          height: 3px;
+          border-radius: 999px;
+          background: #062461;
+        }
+
+        .title-art-sub i::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          width: 12px;
+          height: 12px;
+          transform: translateY(-50%);
+          border-radius: 999px;
+          background: #062461;
+        }
+
+        .title-art-sub i:first-child::after {
+          right: -2px;
+        }
+
+        .title-art-sub i:last-child::after {
+          left: -2px;
         }
 
         .project-board-spacer {
@@ -6286,6 +6439,53 @@ def inject_css() -> None:
           .project-board-head h2 {
             font-size: 28px;
             white-space: normal;
+          }
+
+          .project-title-art {
+            min-height: 116px;
+            transform: scale(0.86);
+            transform-origin: center;
+          }
+
+          .project-title-art::before {
+            width: 112%;
+            height: 96px;
+          }
+
+          .title-art-main {
+            gap: 5px;
+          }
+
+          .title-art-minsaeng {
+            font-size: 28px;
+          }
+
+          .title-art-100 {
+            font-size: 72px;
+            letter-spacing: -5px;
+          }
+
+          .title-art-days {
+            font-size: 34px;
+          }
+
+          .title-art-emergency {
+            margin-left: 2px;
+            font-size: 30px;
+          }
+
+          .title-art-emergency::before {
+            border-width: 3px;
+          }
+
+          .title-art-sub {
+            gap: 12px;
+            margin-top: 5px;
+            font-size: 30px;
+          }
+
+          .title-art-sub i {
+            width: 54px;
           }
 
           .project-head-actions {
