@@ -2160,11 +2160,7 @@ def compact_stage_points_html(project: EmergencyProject) -> str:
     stages = project_stages(project.project_id)
     if not stages:
         return ""
-    if len(stages) <= 3:
-        points = list(stages)
-    else:
-        middle_index = max(1, min(len(stages) - 2, len(stages) // 2))
-        points = [stages[0], stages[middle_index], stages[-1]]
+    points = list(stages)
     try:
         current_index = stages.index(project.status)
     except ValueError:
@@ -2184,7 +2180,7 @@ def compact_stage_points_html(project: EmergencyProject) -> str:
     return f"""
       <div class="project-compact-steps" style="--pct:{project.progress_pct};">
         <div class="project-compact-step-track"><span></span></div>
-        <div class="project-compact-step-labels">
+        <div class="project-compact-step-labels" style="grid-template-columns: repeat({len(points)}, minmax(0, 1fr));">
           {"".join(point_items)}
         </div>
       </div>
@@ -2246,10 +2242,18 @@ def render_project_compact_card(project: EmergencyProject) -> str:
     metric = primary_metric(project)
     current_text = "입력 대기"
     target_text = "목표 미설정"
+    metric_label = "정량 수혜지표"
+    metric_bar_pct = 0.0
+    metric_pct_text = "달성률 산정 대기"
     if metric is not None:
         current = metric_current(project, metric)
         current_text = format_metric_value(current, metric.unit, compact=True)
         target_text = metric.target_text
+        metric_label = metric.label
+        pct = metric_pct(current, metric.target_value)
+        if pct is not None:
+            metric_bar_pct = pct
+            metric_pct_text = f"달성률 {pct:.1f}%"
     stage_markup = compact_stage_points_html(project)
     hover_detail = compact_hover_detail_html(project)
     return f"""
@@ -2258,8 +2262,6 @@ def render_project_compact_card(project: EmergencyProject) -> str:
         <div class="project-compact-main">
           <div class="project-compact-info">
             <em>{safe_text(project.status)}</em>
-            <p><b>목표</b>{safe_text(target_text)}</p>
-            <p class="project-compact-current"><b>실적</b>{safe_text(current_text)}</p>
             <p><b>예산</b>{safe_text(project.budget)}</p>
             <p><b>담당부서</b>{safe_text(project.department)}</p>
           </div>
@@ -2267,6 +2269,15 @@ def render_project_compact_card(project: EmergencyProject) -> str:
             <span>진행률</span>
             <strong>{project.progress_pct}%</strong>
           </div>
+        </div>
+        <div class="project-compact-kpi" style="--metric-pct:{metric_bar_pct:.3f};">
+          <span>{safe_text(metric_label)}</span>
+          <div class="project-compact-kpi-values">
+            <p><b>목표</b><strong>{safe_text(target_text)}</strong></p>
+            <p><b>실적</b><strong>{safe_text(current_text)}</strong></p>
+          </div>
+          <em>{safe_text(metric_pct_text)}</em>
+          <i><b></b></i>
         </div>
         <div class="project-compact-stage-title">추진상황</div>
         {stage_markup}
@@ -4571,7 +4582,7 @@ def inject_css() -> None:
         .project-compact-card:nth-child(3n+2),
         .project-compact-card:nth-child(3n) {
           position: relative;
-          min-height: 338px;
+          min-height: 394px;
           padding: 20px;
           border: 1px solid #dce7f1;
           border-top: 0;
@@ -4606,8 +4617,8 @@ def inject_css() -> None:
         }
 
         .project-compact-kpi {
-          margin: 0 0 13px;
-          padding: 10px 11px;
+          margin: 0 0 14px;
+          padding: 12px 13px 13px;
           border: 1px solid #e3edf5;
           border-radius: 13px;
           background: #f7fbff;
@@ -4618,33 +4629,54 @@ def inject_css() -> None:
           display: block;
           overflow: hidden;
           color: #4d5d75;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 950;
           line-height: 1.2;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
 
-        .project-compact-kpi strong {
+        .project-compact-kpi-values {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          margin-top: 8px;
+        }
+
+        .project-compact-kpi-values p {
+          margin: 0;
+          min-width: 0;
+          overflow: hidden;
+        }
+
+        .project-compact-kpi-values b {
+          display: block;
+          margin-bottom: 3px;
+          color: #6b7788;
+          font-size: 11px;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .project-compact-kpi-values strong {
           display: block;
           overflow: hidden;
-          margin-top: 4px;
-          color: #1f4fd1;
-          font-size: 28px;
+          color: #111827;
+          font-size: 15px;
           font-weight: 950;
-          line-height: 1.05;
+          line-height: 1.12;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
 
         .project-compact-kpi em {
           display: inline-flex;
-          margin-top: 5px;
+          margin-top: 8px;
           padding: 4px 8px;
           border-radius: 3px;
-          background: #b9efbc;
-          color: #14823f;
-          font-size: 13px;
+          background: #f8caca;
+          color: #c2413d;
+          font-size: 12px;
           font-style: normal;
           font-weight: 950;
           line-height: 1;
@@ -4829,8 +4861,7 @@ def inject_css() -> None:
 
         .project-compact-step-labels {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 4px;
+          gap: 3px;
           margin-top: 8px;
         }
 
@@ -4838,9 +4869,9 @@ def inject_css() -> None:
           position: relative;
           padding-top: 10px;
           color: #4c5f74;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 900;
-          line-height: 1.18;
+          line-height: 1.15;
           text-align: center;
           word-break: keep-all;
         }
