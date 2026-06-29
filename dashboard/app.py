@@ -2312,7 +2312,10 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         f"""
         <section class="{board_class} notranslate" translate="no" lang="ko">
           <div class="project-board-head">
-            <div class="project-head-spacer"></div>
+            <div class="project-board-slogan">
+              <span>100일의 변화</span>
+              <strong>시민과 함께 더 나은 부산으로</strong>
+            </div>
             <div class="project-head-title">
               <h2>민생100일 비상대책 추진상황</h2>
             </div>
@@ -4443,13 +4446,13 @@ def inject_css() -> None:
 
         .project-board.compact {
           position: relative;
-          width: calc(100vw - 72px);
+          width: calc(100vw - 18px);
           max-width: none;
-          margin: 22px calc(50% - 50vw + 36px) 36px;
-          padding: 40px 48px 32px;
+          margin: 6px calc(50% - 50vw + 9px) 26px;
+          padding: 24px 32px 26px;
           overflow: visible;
           border: 1px solid #d3e3f1;
-          border-radius: 34px;
+          border-radius: 24px;
           background:
             radial-gradient(circle at 80% 6%, rgba(255, 255, 255, 0.95) 0 8%, rgba(255, 255, 255, 0) 22%),
             linear-gradient(180deg, #f2f8fd 0%, #e5f0f8 100%);
@@ -4465,26 +4468,45 @@ def inject_css() -> None:
 
         .project-board.compact .project-board-head {
           position: relative;
-          display: block;
-          min-height: 112px;
-          padding: 56px 360px 18px;
-          margin-bottom: 8px;
+          display: grid;
+          grid-template-columns: minmax(280px, 0.7fr) minmax(620px, 1.15fr) minmax(238px, 0.6fr);
+          align-items: center;
+          min-height: 86px;
+          padding: 4px 0 16px;
+          margin-bottom: 4px;
           text-align: center;
         }
 
         .project-board.compact .project-board-head h2 {
-          font-size: clamp(34px, 2.7vw, 44px);
+          font-size: clamp(42px, 3vw, 56px);
           letter-spacing: 0;
         }
 
-        .project-board.compact .project-head-spacer {
-          display: none;
+        .project-board-slogan {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 5px;
+          text-align: left;
+        }
+
+        .project-board-slogan span {
+          color: #ff4c94;
+          font-size: 19px;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .project-board-slogan strong {
+          color: #0f172a;
+          font-size: 27px;
+          font-weight: 950;
+          line-height: 1.08;
+          letter-spacing: 0;
         }
 
         .project-board.compact .project-head-actions {
-          position: absolute;
-          top: 8px;
-          right: 0;
+          position: static;
           justify-content: flex-end;
         }
 
@@ -4556,7 +4578,7 @@ def inject_css() -> None:
 
         .project-compact-grid {
           grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 16px;
+          gap: 18px;
         }
 
         .project-compact-card,
@@ -4566,8 +4588,8 @@ def inject_css() -> None:
         .project-compact-card:nth-child(3n+2),
         .project-compact-card:nth-child(3n) {
           position: relative;
-          min-height: 350px;
-          padding: 18px;
+          min-height: 378px;
+          padding: 20px;
           border: 1px solid #dce7f1;
           border-top: 0;
           border-radius: 18px;
@@ -4583,12 +4605,12 @@ def inject_css() -> None:
 
         .project-compact-card h3 {
           display: flex;
-          min-height: 52px;
+          min-height: 60px;
           align-items: flex-start;
           gap: 6px;
           margin: 0 0 15px;
           color: #162236;
-          font-size: 18px;
+          font-size: 20px;
           font-weight: 950;
           line-height: 1.27;
           word-break: keep-all;
@@ -4597,7 +4619,7 @@ def inject_css() -> None:
         .project-compact-card h3 span {
           flex: 0 0 auto;
           color: #111827;
-          font-size: 18px;
+          font-size: 20px;
         }
 
         .project-compact-kpi {
@@ -4613,7 +4635,7 @@ def inject_css() -> None:
           display: block;
           overflow: hidden;
           color: #4d5d75;
-          font-size: 11px;
+          font-size: 13px;
           font-weight: 950;
           line-height: 1.2;
           text-overflow: ellipsis;
@@ -4625,7 +4647,7 @@ def inject_css() -> None:
           overflow: hidden;
           margin-top: 4px;
           color: #1f4fd1;
-          font-size: 22px;
+          font-size: 28px;
           font-weight: 950;
           line-height: 1.05;
           text-overflow: ellipsis;
@@ -4639,7 +4661,7 @@ def inject_css() -> None:
           border-radius: 3px;
           background: #b9efbc;
           color: #14823f;
-          font-size: 11px;
+          font-size: 13px;
           font-style: normal;
           font-weight: 950;
           line-height: 1;
@@ -4647,7 +4669,7 @@ def inject_css() -> None:
 
         .project-compact-kpi i {
           display: block;
-          height: 12px;
+          height: 15px;
           margin-top: 10px;
           overflow: hidden;
           border-radius: 2px;
@@ -4664,8 +4686,8 @@ def inject_css() -> None:
 
         .project-compact-main {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 78px;
-          gap: 10px;
+          grid-template-columns: minmax(0, 1fr) 88px;
+          gap: 12px;
           align-items: center;
           margin-bottom: 12px;
         }
@@ -4673,8 +4695,8 @@ def inject_css() -> None:
         .project-compact-donut {
           display: inline-flex;
           justify-self: end;
-          width: 76px;
-          height: 76px;
+          height: 86px;
+          width: 86px;
           align-items: center;
           justify-content: center;
           flex-direction: column;
@@ -4687,14 +4709,14 @@ def inject_css() -> None:
 
         .project-compact-donut span {
           color: #4b596b;
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 950;
           line-height: 1.1;
         }
 
         .project-compact-donut strong {
           color: #111827;
-          font-size: 20px;
+          font-size: 25px;
           font-weight: 950;
           line-height: 1.05;
         }
@@ -4714,7 +4736,7 @@ def inject_css() -> None:
           border-radius: 999px;
           background: #00a7a3;
           color: #fff;
-          font-size: 11px;
+          font-size: 13px;
           font-style: normal;
           font-weight: 950;
           line-height: 1.2;
@@ -4728,7 +4750,7 @@ def inject_css() -> None:
           margin: 3px 0;
           overflow: hidden;
           color: #26364c;
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 850;
           line-height: 1.34;
           text-overflow: ellipsis;
@@ -4739,7 +4761,7 @@ def inject_css() -> None:
 
         .project-compact-info p b {
           display: inline-block;
-          min-width: 30px;
+          min-width: 34px;
           margin-right: 5px;
           color: #718096;
           font-weight: 950;
@@ -4765,13 +4787,13 @@ def inject_css() -> None:
 
         .project-compact-meta span {
           color: #536376;
-          font-size: 11px;
+          font-size: 13px;
           font-weight: 950;
         }
 
         .project-compact-meta strong {
           color: #102033;
-          font-size: 11px;
+          font-size: 13px;
           font-weight: 950;
         }
 
@@ -4789,7 +4811,7 @@ def inject_css() -> None:
         .project-compact-stage-title {
           margin: 0 0 8px;
           color: #142033;
-          font-size: 13px;
+          font-size: 15px;
           font-weight: 950;
         }
 
@@ -4824,7 +4846,7 @@ def inject_css() -> None:
           position: relative;
           padding-top: 10px;
           color: #4c5f74;
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 900;
           line-height: 1.18;
           text-align: center;
@@ -4860,7 +4882,7 @@ def inject_css() -> None:
           margin-top: 12px;
           overflow: hidden;
           color: #5f6f81;
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 850;
           line-height: 1.35;
           word-break: keep-all;
@@ -6625,29 +6647,30 @@ import_runs_df = load_import_runs()
 countdown_label, countdown_status = minsaeng_countdown()
 current_view = active_view()
 
-st.markdown(
-    f"""
-    <header class="top-board-header notranslate" translate="no" lang="ko">
-      <div class="top-board-inner">
-        <div class="board-logo">
-          <span>100일의 변화</span>
-          <strong>시민과 함께 더 나은 부산으로</strong>
-        </div>
-        <nav class="top-nav" aria-label="대시보드 메뉴">
-          <a class="{nav_class('economy', current_view, 'nav-item nav-economy')}" href="?view=economy" aria-current="{str(current_view == 'economy').lower()}">
-            <span class="nav-title">민생100일 경제 상황판</span>
-          </a>
-          <a class="{nav_class('check', current_view, 'nav-item nav-check')}" href="?view=check" aria-current="{str(current_view == 'check').lower()}">민생100일 비상대책 추진상황</a>
-        </nav>
-        <div class="top-tools">
-          <span class="lang-chip">KR</span>
-          <span class="hamburger"><span></span></span>
-        </div>
-      </div>
-    </header>
-    """,
-    unsafe_allow_html=True,
-)
+if current_view != "check":
+    st.markdown(
+        f"""
+        <header class="top-board-header notranslate" translate="no" lang="ko">
+          <div class="top-board-inner">
+            <div class="board-logo">
+              <span>100일의 변화</span>
+              <strong>시민과 함께 더 나은 부산으로</strong>
+            </div>
+            <nav class="top-nav" aria-label="대시보드 메뉴">
+              <a class="{nav_class('economy', current_view, 'nav-item nav-economy')}" href="?view=economy" aria-current="{str(current_view == 'economy').lower()}">
+                <span class="nav-title">민생100일 경제 상황판</span>
+              </a>
+              <a class="{nav_class('check', current_view, 'nav-item nav-check')}" href="?view=check" aria-current="{str(current_view == 'check').lower()}">민생100일 비상대책 추진상황</a>
+            </nav>
+            <div class="top-tools">
+              <span class="lang-chip">KR</span>
+              <span class="hamburger"><span></span></span>
+            </div>
+          </div>
+        </header>
+        """,
+        unsafe_allow_html=True,
+    )
 
 if observations_df.empty:
     st.warning("아직 자동 수집 관측값이 없습니다. `scripts/init_db.py` 실행 후 수집기를 먼저 실행해야 합니다.")
