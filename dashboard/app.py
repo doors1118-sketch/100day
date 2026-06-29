@@ -2296,6 +2296,8 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         if projects
         else 0
     )
+    countdown_label, _countdown_status = minsaeng_countdown()
+    countdown_suffix = "" if countdown_label == "D-DAY" else "<small>일</small>"
     html_cards = "\n".join(render_project_compact_card(project) for project in projects)
     board_class = "project-board compact"
     grid_class = "project-compact-grid"
@@ -2303,9 +2305,11 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         f"""
         <section class="{board_class} notranslate" translate="no" lang="ko">
           <div class="project-board-head">
-            <div class="project-board-slogan">
-              <span>100일의 변화</span>
-              <strong>시민과 함께 더 나은 부산으로</strong>
+            <div class="project-board-dday d-day-panel" title="2026년 7월 1일부터 자동 카운트다운">
+              <span class="d-day-hourglass" aria-hidden="true"></span>
+              <span class="d-day-text">
+                {countdown_html(countdown_label)}{countdown_suffix}
+              </span>
             </div>
             <div class="project-head-title">
               <h2>민생100일 비상대책 추진상황</h2>
@@ -4473,27 +4477,29 @@ def inject_css() -> None:
           letter-spacing: 0;
         }
 
-        .project-board-slogan {
+        .project-board-dday {
           display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 5px;
-          text-align: left;
+          justify-self: start;
+          height: 64px;
+          min-width: 210px;
+          padding: 0 22px;
+          border-radius: 18px;
         }
 
-        .project-board-slogan span {
-          color: #ff4c94;
-          font-size: 19px;
+        .project-board-dday .d-day-text {
+          gap: 2px;
+        }
+
+        .project-board-dday .d-day-text strong {
+          font-size: 34px;
+          font-weight: 950;
+        }
+
+        .project-board-dday .d-day-text small {
+          color: #111;
+          font-size: 23px;
           font-weight: 950;
           line-height: 1;
-        }
-
-        .project-board-slogan strong {
-          color: #0f172a;
-          font-size: 27px;
-          font-weight: 950;
-          line-height: 1.08;
-          letter-spacing: 0;
         }
 
         .project-board.compact .project-head-actions {
@@ -4648,9 +4654,9 @@ def inject_css() -> None:
 
         .project-compact-kpi-values b {
           display: block;
-          margin-bottom: 3px;
+          margin-bottom: 5px;
           color: #6b7788;
-          font-size: 12px;
+          font-size: 15px;
           font-weight: 950;
           line-height: 1;
         }
@@ -4698,8 +4704,8 @@ def inject_css() -> None:
 
         .project-compact-main {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 102px;
-          gap: 14px;
+          grid-template-columns: minmax(0, 1fr) 78px;
+          gap: 10px;
           align-items: start;
           margin-bottom: 16px;
         }
@@ -4707,8 +4713,8 @@ def inject_css() -> None:
         .project-compact-donut {
           display: inline-flex;
           justify-self: end;
-          height: 98px;
-          width: 98px;
+          height: 78px;
+          width: 78px;
           align-items: center;
           justify-content: center;
           flex-direction: column;
@@ -4721,14 +4727,14 @@ def inject_css() -> None:
 
         .project-compact-donut span {
           color: #4b596b;
-          font-size: 13px;
+          font-size: 11px;
           font-weight: 950;
           line-height: 1.1;
         }
 
         .project-compact-donut strong {
           color: #111827;
-          font-size: 28px;
+          font-size: 23px;
           font-weight: 950;
           line-height: 1.05;
         }
@@ -4737,7 +4743,7 @@ def inject_css() -> None:
           min-width: 0;
           justify-self: end;
           width: 100%;
-          padding: 10px 12px;
+          padding: 11px 13px;
           border-radius: 13px;
           background: #f3f8fc;
         }
@@ -4751,7 +4757,7 @@ def inject_css() -> None:
           border-radius: 999px;
           background: #00a7a3;
           color: #fff;
-          font-size: 14px;
+          font-size: 13px;
           font-style: normal;
           font-weight: 950;
           line-height: 1.2;
@@ -4765,7 +4771,7 @@ def inject_css() -> None:
           margin: 5px 0;
           overflow: hidden;
           color: #26364c;
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 850;
           line-height: 1.3;
           text-overflow: ellipsis;
@@ -4776,8 +4782,8 @@ def inject_css() -> None:
 
         .project-compact-info p b {
           display: inline-block;
-          min-width: 72px;
-          margin-right: 7px;
+          min-width: 58px;
+          margin-right: 6px;
           color: #718096;
           font-weight: 950;
         }
