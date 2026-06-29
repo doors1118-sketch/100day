@@ -2281,9 +2281,6 @@ def render_project_compact_card(project: EmergencyProject) -> str:
         </div>
         <div class="project-compact-stage-title">추진상황</div>
         {stage_markup}
-        <div class="project-compact-note">
-          {safe_text(project.milestone)}
-        </div>
         {hover_detail}
       </article>
     """
@@ -4582,8 +4579,8 @@ def inject_css() -> None:
         .project-compact-card:nth-child(3n+2),
         .project-compact-card:nth-child(3n) {
           position: relative;
-          min-height: 394px;
-          padding: 20px;
+          min-height: 382px;
+          padding: 22px;
           border: 1px solid #dce7f1;
           border-top: 0;
           border-radius: 18px;
@@ -4599,12 +4596,12 @@ def inject_css() -> None:
 
         .project-compact-card h3 {
           display: flex;
-          min-height: 60px;
+          min-height: 62px;
           align-items: flex-start;
           gap: 6px;
           margin: 0 0 16px;
           color: #162236;
-          font-size: 20px;
+          font-size: 22px;
           font-weight: 950;
           line-height: 1.27;
           word-break: keep-all;
@@ -4613,7 +4610,7 @@ def inject_css() -> None:
         .project-compact-card h3 span {
           flex: 0 0 auto;
           color: #111827;
-          font-size: 20px;
+          font-size: 22px;
         }
 
         .project-compact-kpi {
@@ -4629,7 +4626,7 @@ def inject_css() -> None:
           display: block;
           overflow: hidden;
           color: #4d5d75;
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 950;
           line-height: 1.2;
           text-overflow: ellipsis;
@@ -4653,7 +4650,7 @@ def inject_css() -> None:
           display: block;
           margin-bottom: 3px;
           color: #6b7788;
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 950;
           line-height: 1;
         }
@@ -4662,7 +4659,7 @@ def inject_css() -> None:
           display: block;
           overflow: hidden;
           color: #111827;
-          font-size: 15px;
+          font-size: 17px;
           font-weight: 950;
           line-height: 1.12;
           text-overflow: ellipsis;
@@ -4676,7 +4673,7 @@ def inject_css() -> None:
           border-radius: 3px;
           background: #f8caca;
           color: #c2413d;
-          font-size: 12px;
+          font-size: 13px;
           font-style: normal;
           font-weight: 950;
           line-height: 1;
@@ -4701,7 +4698,7 @@ def inject_css() -> None:
 
         .project-compact-main {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 94px;
+          grid-template-columns: minmax(0, 1fr) 102px;
           gap: 14px;
           align-items: start;
           margin-bottom: 16px;
@@ -4710,8 +4707,8 @@ def inject_css() -> None:
         .project-compact-donut {
           display: inline-flex;
           justify-self: end;
-          height: 92px;
-          width: 92px;
+          height: 98px;
+          width: 98px;
           align-items: center;
           justify-content: center;
           flex-direction: column;
@@ -4724,14 +4721,14 @@ def inject_css() -> None:
 
         .project-compact-donut span {
           color: #4b596b;
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 950;
           line-height: 1.1;
         }
 
         .project-compact-donut strong {
           color: #111827;
-          font-size: 25px;
+          font-size: 28px;
           font-weight: 950;
           line-height: 1.05;
         }
@@ -4754,7 +4751,7 @@ def inject_css() -> None:
           border-radius: 999px;
           background: #00a7a3;
           color: #fff;
-          font-size: 13px;
+          font-size: 14px;
           font-style: normal;
           font-weight: 950;
           line-height: 1.2;
@@ -4768,7 +4765,7 @@ def inject_css() -> None:
           margin: 5px 0;
           overflow: hidden;
           color: #26364c;
-          font-size: 15px;
+          font-size: 16px;
           font-weight: 850;
           line-height: 1.3;
           text-overflow: ellipsis;
@@ -4779,7 +4776,7 @@ def inject_css() -> None:
 
         .project-compact-info p b {
           display: inline-block;
-          min-width: 66px;
+          min-width: 72px;
           margin-right: 7px;
           color: #718096;
           font-weight: 950;
@@ -4835,7 +4832,7 @@ def inject_css() -> None:
         .project-compact-stage-title {
           margin: 0 0 8px;
           color: #142033;
-          font-size: 15px;
+          font-size: 17px;
           font-weight: 950;
         }
 
@@ -4869,7 +4866,7 @@ def inject_css() -> None:
           position: relative;
           padding-top: 10px;
           color: #4c5f74;
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 900;
           line-height: 1.15;
           text-align: center;
@@ -4897,20 +4894,6 @@ def inject_css() -> None:
 
         .project-compact-step.is-current {
           color: #086b78;
-        }
-
-        .project-compact-note {
-          display: -webkit-box;
-          min-height: 30px;
-          margin-top: 12px;
-          overflow: hidden;
-          color: #5f6f81;
-          font-size: 12px;
-          font-weight: 850;
-          line-height: 1.35;
-          word-break: keep-all;
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 2;
         }
 
         .project-hover-detail {
