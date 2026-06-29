@@ -2297,7 +2297,12 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         else 0
     )
     countdown_label, _countdown_status = minsaeng_countdown()
-    countdown_suffix = "" if countdown_label == "D-DAY" else "<small>일</small>"
+    if countdown_label == "D-DAY":
+        countdown_caption = "D-Day"
+    elif countdown_label.startswith("D-"):
+        countdown_caption = f"D-Day: {countdown_label[2:]}일 남음"
+    else:
+        countdown_caption = countdown_label
     html_cards = "\n".join(render_project_compact_card(project) for project in projects)
     board_class = "project-board compact"
     grid_class = "project-compact-grid"
@@ -2305,22 +2310,15 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         f"""
         <section class="{board_class} notranslate" translate="no" lang="ko">
           <div class="project-board-head">
-            <div class="project-board-dday d-day-panel" title="2026년 7월 1일부터 자동 카운트다운">
-              <span class="d-day-hourglass" aria-hidden="true"></span>
-              <span class="d-day-text">
-                {countdown_html(countdown_label)}{countdown_suffix}
-              </span>
-            </div>
+            <div class="project-board-spacer" aria-hidden="true"></div>
             <div class="project-head-title">
               <h2>민생100일 비상대책 추진상황</h2>
             </div>
             <div class="project-head-actions">
               <div class="project-overall-progress" style="--pct:{avg_progress};">
-                <i><b>{avg_progress}%</b></i>
-                <div>
-                  <span>10개 과제</span>
-                  <strong>평균 추진률</strong>
-                </div>
+                <span>전체 진행률</span>
+                <strong>{avg_progress}%</strong>
+                <em>{safe_text(countdown_caption)}</em>
               </div>
             </div>
           </div>
@@ -4477,29 +4475,8 @@ def inject_css() -> None:
           letter-spacing: 0;
         }
 
-        .project-board-dday {
-          display: flex;
-          justify-self: start;
-          height: 64px;
+        .project-board-spacer {
           min-width: 210px;
-          padding: 0 22px;
-          border-radius: 18px;
-        }
-
-        .project-board-dday .d-day-text {
-          gap: 2px;
-        }
-
-        .project-board-dday .d-day-text strong {
-          font-size: 34px;
-          font-weight: 950;
-        }
-
-        .project-board-dday .d-day-text small {
-          color: #111;
-          font-size: 23px;
-          font-weight: 950;
-          line-height: 1;
         }
 
         .project-board.compact .project-head-actions {
@@ -4508,69 +4485,46 @@ def inject_css() -> None:
         }
 
         .project-overall-progress {
-          display: inline-flex;
-          align-items: center;
-          gap: 12px;
-          min-width: 238px;
-          padding: 10px 14px 10px 10px;
-          border: 1px solid #cddfed;
-          border-radius: 999px;
-          background: rgba(255, 255, 255, 0.96);
-          box-shadow: 0 14px 28px rgba(36, 62, 99, 0.1);
-        }
-
-        .project-overall-progress i {
           position: relative;
           display: inline-flex;
-          flex: 0 0 66px;
-          width: 66px;
-          height: 66px;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
-          overflow: hidden;
+          width: 150px;
+          height: 150px;
+          min-width: 150px;
+          padding: 0;
+          border: 1px solid #cddfed;
           border-radius: 999px;
           background:
-            radial-gradient(circle, #fff 0 50%, transparent 51%),
-            conic-gradient(#0aa6a4 calc(var(--pct) * 1%), #d7e8ef 0);
-        }
-
-        .project-overall-progress i b {
-          position: relative;
-          z-index: 1;
-          display: inline;
-          width: auto;
-          height: auto;
-          border-radius: 0;
-          background: transparent;
-          color: #111827;
-          font-size: 17px;
-          font-weight: 950;
-          line-height: 1;
-        }
-
-        .project-overall-progress div {
-          display: block;
-          margin: 0;
-        }
-
-        .project-overall-progress span,
-        .project-overall-progress strong {
-          display: block;
-          white-space: nowrap;
+            radial-gradient(circle, rgba(255, 255, 255, 0.98) 0 61%, transparent 62%),
+            conic-gradient(#11b884 calc(var(--pct) * 1%), #d8edf4 0);
+          box-shadow: 0 18px 32px rgba(36, 62, 99, 0.14);
         }
 
         .project-overall-progress span {
-          color: #5c6b7d;
-          font-size: 12px;
-          font-weight: 900;
+          color: #1f2937;
+          font-size: 17px;
+          font-weight: 950;
           line-height: 1.2;
+          white-space: nowrap;
         }
 
         .project-overall-progress strong {
           color: #0f172a;
-          font-size: 18px;
+          font-size: 36px;
           font-weight: 950;
-          line-height: 1.25;
+          line-height: 1.05;
+          white-space: nowrap;
+        }
+
+        .project-overall-progress em {
+          color: #344256;
+          font-size: 15px;
+          font-style: normal;
+          font-weight: 950;
+          line-height: 1.2;
+          white-space: nowrap;
         }
 
         .project-compact-grid {
@@ -6325,6 +6279,10 @@ def inject_css() -> None:
             display: none;
           }
 
+          .project-board-spacer {
+            display: none;
+          }
+
           .project-board-head h2 {
             font-size: 28px;
             white-space: normal;
@@ -6336,8 +6294,21 @@ def inject_css() -> None:
           }
 
           .project-overall-progress {
-            width: min(100%, 320px);
-            min-width: 0;
+            width: 132px;
+            height: 132px;
+            min-width: 132px;
+          }
+
+          .project-overall-progress span {
+            font-size: 15px;
+          }
+
+          .project-overall-progress strong {
+            font-size: 31px;
+          }
+
+          .project-overall-progress em {
+            font-size: 13px;
           }
 
           .project-board-head p {
