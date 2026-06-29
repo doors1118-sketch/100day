@@ -2258,7 +2258,7 @@ def render_project_compact_card(project: EmergencyProject) -> str:
     hover_detail = compact_hover_detail_html(project)
     return f"""
       <article class="project-compact-card" tabindex="0" aria-label="{safe_text(project.title)} 상세 보기">
-        <h3><span>{project.number}</span>{safe_text(project.title)}</h3>
+        <h3><span>{project.number}</span><strong>{safe_text(project.title)}</strong></h3>
         <div class="project-compact-main">
           <div class="project-compact-info">
             <em>{safe_text(project.status)}</em>
@@ -4454,7 +4454,7 @@ def inject_css() -> None:
           width: calc(100vw - 18px);
           max-width: none;
           margin: 6px calc(50% - 50vw + 9px) 26px;
-          padding: 24px 32px 26px;
+          padding: 12px 28px 18px;
           overflow: visible;
           border: 1px solid #d3e3f1;
           border-radius: 24px;
@@ -4476,8 +4476,8 @@ def inject_css() -> None:
           display: grid;
           grid-template-columns: minmax(280px, 0.7fr) minmax(620px, 1.15fr) minmax(238px, 0.6fr);
           align-items: center;
-          min-height: 154px;
-          padding: 0 0 14px;
+          min-height: 118px;
+          padding: 0 0 8px;
           margin-bottom: 0;
           text-align: center;
         }
@@ -4490,7 +4490,7 @@ def inject_css() -> None:
         .project-title-art {
           position: relative;
           display: flex;
-          min-height: 138px;
+          min-height: 112px;
           align-items: center;
           justify-content: center;
           flex-direction: column;
@@ -4504,10 +4504,10 @@ def inject_css() -> None:
           content: "";
           position: absolute;
           z-index: -1;
-          top: 4px;
+          top: 8px;
           left: 50%;
           width: min(780px, 110%);
-          height: 120px;
+          height: 96px;
           transform: translateX(-50%) skewX(-13deg);
           background:
             radial-gradient(circle at 12px 12px, rgba(68, 101, 153, 0.22) 0 2px, transparent 2.6px) 0 0 / 18px 18px,
@@ -4520,8 +4520,8 @@ def inject_css() -> None:
           display: inline-flex;
           align-items: flex-end;
           justify-content: center;
-          gap: 10px;
-          line-height: 0.82;
+          gap: 7px;
+          line-height: 1.02;
         }
 
         .title-art-minsaeng,
@@ -4535,38 +4535,38 @@ def inject_css() -> None:
 
         .title-art-minsaeng {
           color: #062461;
-          font-size: clamp(38px, 3vw, 56px);
+          font-size: clamp(32px, 2.35vw, 44px);
           text-shadow: 4px 4px 0 rgba(8, 45, 103, 0.10);
         }
 
         .title-art-100 {
           display: inline-block;
-          margin: 0 -4px -6px -2px;
+          margin: 0 -3px 0 -2px;
           background: linear-gradient(112deg, #061e5c 0%, #0d3c7c 42%, #14aeb3 100%);
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;
           filter: drop-shadow(6px 7px 0 rgba(7, 36, 79, 0.13));
           font-family: var(--font-latin);
-          font-size: clamp(90px, 7vw, 136px);
+          font-size: clamp(76px, 5.4vw, 104px);
           font-style: italic;
           font-weight: 950;
-          letter-spacing: -9px;
-          line-height: 0.76;
+          letter-spacing: -7px;
+          line-height: 1;
         }
 
         .title-art-days {
           color: #0aa7aa;
-          font-size: clamp(42px, 3.5vw, 66px);
+          font-size: clamp(34px, 2.55vw, 48px);
           text-shadow: 4px 4px 0 rgba(10, 167, 170, 0.12);
         }
 
         .title-art-emergency {
           position: relative;
-          margin-left: 8px;
+          margin-left: 6px;
           padding: 0.08em 0.28em 0.1em;
           color: #ef3f43;
-          font-size: clamp(40px, 3.6vw, 70px);
+          font-size: clamp(34px, 2.75vw, 52px);
           text-shadow: 4px 4px 0 rgba(239, 63, 67, 0.10);
         }
 
@@ -4576,8 +4576,8 @@ def inject_css() -> None:
           z-index: -1;
           inset: -0.08em -0.2em -0.08em -0.08em;
           transform: skewX(-13deg);
-          border: 5px solid #ef3f43;
-          border-left-width: 7px;
+          border: 4px solid #ef3f43;
+          border-left-width: 6px;
           background: rgba(255, 255, 255, 0.24);
           clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%);
         }
@@ -4586,10 +4586,10 @@ def inject_css() -> None:
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 22px;
-          margin-top: 8px;
+          gap: 16px;
+          margin-top: 4px;
           color: #062461;
-          font-size: clamp(36px, 3vw, 58px);
+          font-size: clamp(30px, 2.45vw, 44px);
           font-weight: 950;
           line-height: 1;
         }
@@ -4604,7 +4604,7 @@ def inject_css() -> None:
           position: relative;
           display: inline-block;
           width: clamp(80px, 8vw, 150px);
-          height: 3px;
+          height: 2px;
           border-radius: 999px;
           background: #062461;
         }
@@ -4613,8 +4613,8 @@ def inject_css() -> None:
           content: "";
           position: absolute;
           top: 50%;
-          width: 12px;
-          height: 12px;
+          width: 10px;
+          height: 10px;
           transform: translateY(-50%);
           border-radius: 999px;
           background: #062461;
@@ -4643,9 +4643,9 @@ def inject_css() -> None:
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          width: 150px;
-          height: 150px;
-          min-width: 150px;
+          width: 134px;
+          height: 134px;
+          min-width: 134px;
           padding: 0;
           border: 1px solid #cddfed;
           border-radius: 999px;
@@ -4657,7 +4657,7 @@ def inject_css() -> None:
 
         .project-overall-progress span {
           color: #1f2937;
-          font-size: 17px;
+          font-size: 15px;
           font-weight: 950;
           line-height: 1.2;
           white-space: nowrap;
@@ -4665,7 +4665,7 @@ def inject_css() -> None:
 
         .project-overall-progress strong {
           color: #0f172a;
-          font-size: 36px;
+          font-size: 31px;
           font-weight: 950;
           line-height: 1.05;
           white-space: nowrap;
@@ -4673,16 +4673,18 @@ def inject_css() -> None:
 
         .project-overall-progress em {
           color: #344256;
-          font-size: 15px;
+          max-width: 92px;
+          font-size: 12px;
           font-style: normal;
           font-weight: 950;
           line-height: 1.2;
-          white-space: nowrap;
+          text-align: center;
+          white-space: normal;
         }
 
         .project-compact-grid {
           grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 18px;
+          gap: 12px;
         }
 
         .project-compact-card,
@@ -4692,8 +4694,8 @@ def inject_css() -> None:
         .project-compact-card:nth-child(3n+2),
         .project-compact-card:nth-child(3n) {
           position: relative;
-          min-height: 382px;
-          padding: 22px;
+          min-height: 300px;
+          padding: 16px;
           border: 1px solid #dce7f1;
           border-top: 0;
           border-radius: 18px;
@@ -4709,26 +4711,39 @@ def inject_css() -> None:
 
         .project-compact-card h3 {
           display: flex;
-          min-height: 62px;
+          min-height: 42px;
           align-items: flex-start;
-          gap: 6px;
-          margin: 0 0 16px;
+          gap: 5px;
+          margin: 0 0 10px;
           color: #162236;
-          font-size: 22px;
+          font-size: 18px;
           font-weight: 950;
-          line-height: 1.27;
+          line-height: 1.14;
           word-break: keep-all;
         }
 
         .project-compact-card h3 span {
           flex: 0 0 auto;
           color: #111827;
-          font-size: 22px;
+          font-size: 18px;
+          line-height: 1.14;
+        }
+
+        .project-compact-card h3 strong {
+          display: -webkit-box;
+          min-width: 0;
+          overflow: hidden;
+          font-weight: 950;
+          letter-spacing: -0.01em;
+          text-overflow: ellipsis;
+          word-break: keep-all;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
         }
 
         .project-compact-kpi {
-          margin: 0 0 14px;
-          padding: 12px 13px 13px;
+          margin: 0 0 10px;
+          padding: 9px 10px 10px;
           border: 1px solid #e3edf5;
           border-radius: 13px;
           background: #f7fbff;
@@ -4739,7 +4754,7 @@ def inject_css() -> None:
           display: block;
           overflow: hidden;
           color: #4d5d75;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 950;
           line-height: 1.2;
           text-overflow: ellipsis;
@@ -4749,8 +4764,8 @@ def inject_css() -> None:
         .project-compact-kpi-values {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 8px;
-          margin-top: 8px;
+          gap: 6px;
+          margin-top: 6px;
         }
 
         .project-compact-kpi-values p {
@@ -4761,9 +4776,9 @@ def inject_css() -> None:
 
         .project-compact-kpi-values b {
           display: block;
-          margin-bottom: 5px;
+          margin-bottom: 4px;
           color: #6b7788;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 950;
           line-height: 1;
         }
@@ -4772,7 +4787,7 @@ def inject_css() -> None:
           display: block;
           overflow: hidden;
           color: #111827;
-          font-size: 17px;
+          font-size: 15px;
           font-weight: 950;
           line-height: 1.12;
           text-overflow: ellipsis;
@@ -4781,12 +4796,12 @@ def inject_css() -> None:
 
         .project-compact-kpi em {
           display: inline-flex;
-          margin-top: 8px;
-          padding: 4px 8px;
+          margin-top: 6px;
+          padding: 3px 7px;
           border-radius: 3px;
           background: #f8caca;
           color: #c2413d;
-          font-size: 13px;
+          font-size: 11px;
           font-style: normal;
           font-weight: 950;
           line-height: 1;
@@ -4795,7 +4810,7 @@ def inject_css() -> None:
         .project-compact-kpi i {
           display: block;
           height: 15px;
-          margin-top: 10px;
+          margin-top: 8px;
           overflow: hidden;
           border-radius: 2px;
           background: #d6d9ef;
@@ -4811,17 +4826,17 @@ def inject_css() -> None:
 
         .project-compact-main {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 78px;
-          gap: 10px;
+          grid-template-columns: minmax(0, 1fr) 66px;
+          gap: 8px;
           align-items: start;
-          margin-bottom: 16px;
+          margin-bottom: 10px;
         }
 
         .project-compact-donut {
           display: inline-flex;
           justify-self: end;
-          height: 78px;
-          width: 78px;
+          height: 66px;
+          width: 66px;
           align-items: center;
           justify-content: center;
           flex-direction: column;
@@ -4834,14 +4849,14 @@ def inject_css() -> None:
 
         .project-compact-donut span {
           color: #4b596b;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 950;
           line-height: 1.1;
         }
 
         .project-compact-donut strong {
           color: #111827;
-          font-size: 23px;
+          font-size: 20px;
           font-weight: 950;
           line-height: 1.05;
         }
@@ -4850,7 +4865,7 @@ def inject_css() -> None:
           min-width: 0;
           justify-self: end;
           width: 100%;
-          padding: 11px 13px;
+          padding: 8px 10px;
           border-radius: 13px;
           background: #f3f8fc;
         }
@@ -4858,13 +4873,13 @@ def inject_css() -> None:
         .project-compact-info em {
           display: inline-flex;
           max-width: 100%;
-          margin-bottom: 7px;
-          padding: 5px 11px;
+          margin-bottom: 5px;
+          padding: 4px 9px;
           overflow: hidden;
           border-radius: 999px;
           background: #00a7a3;
           color: #fff;
-          font-size: 13px;
+          font-size: 12px;
           font-style: normal;
           font-weight: 950;
           line-height: 1.2;
@@ -4875,10 +4890,10 @@ def inject_css() -> None:
         .project-compact-info p {
           display: block;
           min-height: 0;
-          margin: 5px 0;
+          margin: 3px 0;
           overflow: hidden;
           color: #26364c;
-          font-size: 14px;
+          font-size: 12px;
           font-weight: 850;
           line-height: 1.3;
           text-overflow: ellipsis;
@@ -4889,8 +4904,8 @@ def inject_css() -> None:
 
         .project-compact-info p b {
           display: inline-block;
-          min-width: 58px;
-          margin-right: 6px;
+          min-width: 48px;
+          margin-right: 5px;
           color: #718096;
           font-weight: 950;
         }
@@ -4943,19 +4958,19 @@ def inject_css() -> None:
         }
 
         .project-compact-stage-title {
-          margin: 0 0 8px;
+          margin: 0 0 6px;
           color: #142033;
-          font-size: 17px;
+          font-size: 15px;
           font-weight: 950;
         }
 
         .project-compact-steps {
-          padding: 0 2px;
+          padding: 0 1px;
         }
 
         .project-compact-step-track {
           position: relative;
-          height: 7px;
+          height: 6px;
           overflow: hidden;
           border-radius: 999px;
           background: #dce7ee;
@@ -4971,17 +4986,17 @@ def inject_css() -> None:
 
         .project-compact-step-labels {
           display: grid;
-          gap: 3px;
-          margin-top: 8px;
+          gap: 2px;
+          margin-top: 6px;
         }
 
         .project-compact-step {
           position: relative;
-          padding-top: 10px;
+          padding-top: 8px;
           color: #4c5f74;
-          font-size: 12px;
+          font-size: 10px;
           font-weight: 900;
-          line-height: 1.15;
+          line-height: 1.08;
           text-align: center;
           word-break: keep-all;
         }
@@ -4991,10 +5006,10 @@ def inject_css() -> None:
           position: absolute;
           top: -1px;
           left: 50%;
-          width: 11px;
-          height: 11px;
+          width: 9px;
+          height: 9px;
           transform: translateX(-50%);
-          border: 2px solid #b8cad7;
+          border: 1.5px solid #b8cad7;
           border-radius: 999px;
           background: #fff;
         }
