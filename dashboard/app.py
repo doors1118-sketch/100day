@@ -2191,6 +2191,57 @@ def compact_stage_points_html(project: EmergencyProject) -> str:
     """
 
 
+def compact_hover_detail_html(project: EmergencyProject) -> str:
+    stage_markup = stage_html(project.project_id, project.status)
+    metrics_markup = metric_rows_html(project)
+    issue_markup = (
+        f"""
+        <div class="project-hover-text">
+          <span>쟁점·애로사항</span>
+          <strong>{safe_text(project.issue)}</strong>
+        </div>
+        """
+        if project.issue and project.issue != "입력 전"
+        else ""
+    )
+    return f"""
+      <div class="project-hover-detail" aria-hidden="true">
+        <div class="project-hover-head">
+          <span>{project.number:02d}</span>
+          <strong>상세 추진정보</strong>
+        </div>
+        <dl class="project-hover-meta">
+          <div>
+            <dt>소관부서</dt>
+            <dd>{safe_text(project.department)}</dd>
+          </div>
+          <div>
+            <dt>소요예산</dt>
+            <dd>{safe_text(project.budget)}</dd>
+          </div>
+        </dl>
+        <p class="project-hover-feature">{safe_text(project.feature)}</p>
+        <div class="project-hover-label">사업별 진행상태</div>
+        <div class="project-hover-stage">
+          {stage_markup}
+        </div>
+        <div class="project-hover-status">
+          <strong>{safe_text(project.status)}</strong>
+          <span>{safe_text(project.latest_update)}</span>
+        </div>
+        <div class="project-hover-label">정량 수혜지표</div>
+        <div class="project-hover-metrics">
+          {metrics_markup}
+        </div>
+        <div class="project-hover-text">
+          <span>추진계획</span>
+          <strong>{safe_text(project.milestone)}</strong>
+        </div>
+        {issue_markup}
+      </div>
+    """
+
+
 def render_project_compact_card(project: EmergencyProject) -> str:
     metric = primary_metric(project)
     current_text = "입력 대기"
@@ -2202,8 +2253,9 @@ def render_project_compact_card(project: EmergencyProject) -> str:
         target_text = metric.target_text
         metric_label = metric.label
     stage_markup = compact_stage_points_html(project)
+    hover_detail = compact_hover_detail_html(project)
     return f"""
-      <article class="project-compact-card">
+      <article class="project-compact-card" tabindex="0" aria-label="{safe_text(project.title)} 상세 보기">
         <h3><span>{project.number}</span>{safe_text(project.title)}</h3>
         <div class="project-compact-main">
           <div class="project-compact-donut" style="--pct:{project.progress_pct};">
@@ -2226,6 +2278,7 @@ def render_project_compact_card(project: EmergencyProject) -> str:
         <div class="project-compact-note">
           {safe_text(project.milestone)}
         </div>
+        {hover_detail}
       </article>
     """
 
@@ -2240,15 +2293,9 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         if projects
         else 0
     )
-    project_layout = active_project_layout()
-    html_cards = "\n".join(
-        render_project_compact_card(project) if project_layout == "compact" else render_project_card(project)
-        for project in projects
-    )
-    detail_class = "active" if project_layout == "detail" else ""
-    compact_class = "active" if project_layout == "compact" else ""
-    board_class = "project-board compact" if project_layout == "compact" else "project-board"
-    grid_class = "project-compact-grid" if project_layout == "compact" else "project-grid"
+    html_cards = "\n".join(render_project_compact_card(project) for project in projects)
+    board_class = "project-board compact"
+    grid_class = "project-compact-grid"
     st.html(
         f"""
         <section class="{board_class} notranslate" translate="no" lang="ko">
@@ -2264,10 +2311,6 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
                   <span>10개 과제</span>
                   <strong>평균 추진률</strong>
                 </div>
-              </div>
-              <div class="project-view-toggle" aria-label="추진상황 보기 방식">
-                <a class="{detail_class}" href="?view=check&layout=detail">상세형</a>
-                <a class="{compact_class}" href="?view=check&layout=compact">압축형</a>
               </div>
             </div>
           </div>
@@ -4387,9 +4430,11 @@ def inject_css() -> None:
         }
 
         .project-board.compact {
-          max-width: 1680px;
-          margin: 22px auto 36px;
-          padding: 34px 38px 32px;
+          position: relative;
+          width: calc(100vw - 72px);
+          max-width: none;
+          margin: 22px calc(50% - 50vw + 36px) 36px;
+          padding: 40px 48px 32px;
           overflow: visible;
           border: 1px solid #d3e3f1;
           border-radius: 34px;
@@ -4407,14 +4452,28 @@ def inject_css() -> None:
         }
 
         .project-board.compact .project-board-head {
-          padding: 0 0 24px;
+          position: relative;
+          display: block;
+          min-height: 112px;
+          padding: 56px 360px 18px;
           margin-bottom: 8px;
-          grid-template-columns: minmax(240px, 1fr) auto minmax(300px, 1fr);
+          text-align: center;
         }
 
         .project-board.compact .project-board-head h2 {
           font-size: clamp(34px, 2.7vw, 44px);
           letter-spacing: 0;
+        }
+
+        .project-board.compact .project-head-spacer {
+          display: none;
+        }
+
+        .project-board.compact .project-head-actions {
+          position: absolute;
+          top: 8px;
+          right: 0;
+          justify-content: flex-end;
         }
 
         .project-overall-progress {
@@ -4485,7 +4544,7 @@ def inject_css() -> None:
 
         .project-compact-grid {
           grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 14px;
+          gap: 16px;
         }
 
         .project-compact-card,
@@ -4494,6 +4553,7 @@ def inject_css() -> None:
         .project-compact-card:nth-child(4n),
         .project-compact-card:nth-child(3n+2),
         .project-compact-card:nth-child(3n) {
+          position: relative;
           min-height: 300px;
           padding: 18px;
           border: 1px solid #dce7f1;
@@ -4502,6 +4562,11 @@ def inject_css() -> None:
           background: rgba(255, 255, 255, 0.96);
           color: #142033;
           box-shadow: 0 14px 28px rgba(37, 59, 93, 0.1);
+        }
+
+        .project-compact-card:focus {
+          outline: 3px solid rgba(37, 99, 235, 0.24);
+          outline-offset: 3px;
         }
 
         .project-compact-card h3 {
@@ -4724,6 +4789,248 @@ def inject_css() -> None:
           word-break: keep-all;
           -webkit-box-orient: vertical;
           -webkit-line-clamp: 2;
+        }
+
+        .project-hover-detail {
+          position: absolute;
+          z-index: 50;
+          left: 50%;
+          top: calc(100% - 20px);
+          width: min(480px, calc(100vw - 96px));
+          max-height: min(72vh, 680px);
+          padding: 18px;
+          overflow: auto;
+          border: 1px solid #cbdbea;
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.98);
+          box-shadow: 0 26px 64px rgba(15, 31, 54, 0.22);
+          opacity: 0;
+          pointer-events: none;
+          transform: translate(-50%, 14px) scale(0.985);
+          transition: opacity 160ms ease, transform 160ms ease;
+        }
+
+        .project-compact-card:hover,
+        .project-compact-card:focus-within {
+          z-index: 20;
+        }
+
+        .project-compact-card:hover .project-hover-detail,
+        .project-compact-card:focus .project-hover-detail,
+        .project-compact-card:focus-within .project-hover-detail {
+          opacity: 1;
+          pointer-events: auto;
+          transform: translate(-50%, 0) scale(1);
+        }
+
+        .project-compact-card:nth-child(n+6) .project-hover-detail {
+          top: auto;
+          bottom: calc(100% - 20px);
+          transform: translate(-50%, -14px) scale(0.985);
+        }
+
+        .project-compact-card:nth-child(n+6):hover .project-hover-detail,
+        .project-compact-card:nth-child(n+6):focus .project-hover-detail,
+        .project-compact-card:nth-child(n+6):focus-within .project-hover-detail {
+          transform: translate(-50%, 0) scale(1);
+        }
+
+        .project-hover-head {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          margin-bottom: 12px;
+        }
+
+        .project-hover-head span {
+          display: inline-flex;
+          width: 32px;
+          height: 32px;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          background: #e4f3f7;
+          color: #087078;
+          font-size: 13px;
+          font-weight: 950;
+        }
+
+        .project-hover-head strong {
+          color: #0f172a;
+          font-size: 18px;
+          font-weight: 950;
+        }
+
+        .project-hover-meta {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          margin: 0 0 10px;
+        }
+
+        .project-hover-meta div {
+          min-width: 0;
+          padding: 10px 11px;
+          border-radius: 12px;
+          background: #f1f7fb;
+        }
+
+        .project-hover-meta dt {
+          margin: 0 0 4px;
+          color: #64748b;
+          font-size: 11px;
+          font-weight: 950;
+        }
+
+        .project-hover-meta dd {
+          margin: 0;
+          overflow: hidden;
+          color: #0f172a;
+          font-size: 13px;
+          font-weight: 900;
+          line-height: 1.28;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-hover-feature {
+          margin: 0 0 12px;
+          color: #334155;
+          font-size: 13px;
+          font-weight: 800;
+          line-height: 1.45;
+          word-break: keep-all;
+        }
+
+        .project-hover-label {
+          margin: 12px 0 7px;
+          color: #0f172a;
+          font-size: 13px;
+          font-weight: 950;
+        }
+
+        .project-hover-stage {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .project-hover-stage span {
+          padding: 6px 8px;
+          border: 1px solid #d7e3ee;
+          border-radius: 999px;
+          background: #f6f9fc;
+          color: #5f6f82;
+          font-size: 11px;
+          font-weight: 900;
+          line-height: 1;
+        }
+
+        .project-hover-stage span.is-done {
+          border-color: #9fe2df;
+          background: #e8fbfa;
+          color: #08706f;
+        }
+
+        .project-hover-stage span.is-current {
+          border-color: #1aa8a4;
+          background: #1aa8a4;
+          color: #fff;
+        }
+
+        .project-hover-status {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 8px;
+          align-items: center;
+          margin-top: 10px;
+          padding: 10px 11px;
+          border-radius: 12px;
+          background: #eef8f8;
+        }
+
+        .project-hover-status strong {
+          color: #08706f;
+          font-size: 13px;
+          font-weight: 950;
+          white-space: nowrap;
+        }
+
+        .project-hover-status span {
+          overflow: hidden;
+          color: #334155;
+          font-size: 12px;
+          font-weight: 850;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-hover-metrics {
+          display: grid;
+          gap: 7px;
+        }
+
+        .project-hover-metrics .metric-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 4px 10px;
+          padding: 9px 10px;
+          border-radius: 12px;
+          background: #f7fafc;
+        }
+
+        .project-hover-metrics .metric-row span {
+          overflow: hidden;
+          color: #475569;
+          font-size: 12px;
+          font-weight: 900;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-hover-metrics .metric-row strong {
+          color: #0f172a;
+          font-size: 12px;
+          font-weight: 950;
+          white-space: nowrap;
+        }
+
+        .project-hover-metrics .metric-row em {
+          color: #64748b;
+          font-size: 11px;
+          font-style: normal;
+          font-weight: 800;
+        }
+
+        .project-hover-metrics .metric-row b {
+          color: #2563eb;
+          font-size: 11px;
+          font-weight: 950;
+          text-align: right;
+        }
+
+        .project-hover-text {
+          margin-top: 10px;
+          padding: 10px 11px;
+          border-radius: 12px;
+          background: #f7fafc;
+        }
+
+        .project-hover-text span {
+          display: block;
+          margin-bottom: 5px;
+          color: #64748b;
+          font-size: 11px;
+          font-weight: 950;
+        }
+
+        .project-hover-text strong {
+          display: block;
+          color: #0f172a;
+          font-size: 12px;
+          font-weight: 900;
+          line-height: 1.45;
+          word-break: keep-all;
         }
 
         .project-board.compact .project-source {
@@ -5962,8 +6269,22 @@ def inject_css() -> None:
           }
 
           .project-board.compact {
+            width: auto;
+            max-width: none;
+            margin: 0;
             padding: 0 16px 28px;
             overflow-x: auto;
+          }
+
+          .project-board.compact .project-board-head {
+            display: grid;
+            min-height: 0;
+            padding: 18px 0 10px;
+          }
+
+          .project-board.compact .project-head-actions {
+            position: static;
+            justify-content: center;
           }
 
           .project-compact-card {
