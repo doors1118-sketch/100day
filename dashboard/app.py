@@ -1867,10 +1867,10 @@ def active_view() -> str:
 
 
 def active_project_layout() -> str:
-    raw_layout = st.query_params.get("layout", "detail")
+    raw_layout = st.query_params.get("layout", "compact")
     if isinstance(raw_layout, list):
-        raw_layout = raw_layout[0] if raw_layout else "detail"
-    return raw_layout if raw_layout in {"detail", "compact"} else "detail"
+        raw_layout = raw_layout[0] if raw_layout else "compact"
+    return raw_layout if raw_layout in {"detail", "compact"} else "compact"
 
 
 def nav_class(view: str, current_view: str, base_class: str) -> str:
@@ -2156,50 +2156,76 @@ def render_project_card(project: EmergencyProject) -> str:
     """
 
 
+def compact_stage_points_html(project: EmergencyProject) -> str:
+    stages = project_stages(project.project_id)
+    if not stages:
+        return ""
+    if len(stages) <= 3:
+        points = list(stages)
+    else:
+        middle_index = max(1, min(len(stages) - 2, len(stages) // 2))
+        points = [stages[0], stages[middle_index], stages[-1]]
+    try:
+        current_index = stages.index(project.status)
+    except ValueError:
+        current_index = -1
+    point_items = []
+    for label in points:
+        try:
+            stage_index = stages.index(label)
+        except ValueError:
+            stage_index = -1
+        class_names = ["project-compact-step"]
+        if current_index >= 0 and stage_index < current_index:
+            class_names.append("is-done")
+        if current_index >= 0 and stage_index == current_index:
+            class_names.append("is-current")
+        point_items.append(f'<span class="{" ".join(class_names)}">{safe_text(label)}</span>')
+    return f"""
+      <div class="project-compact-steps" style="--pct:{project.progress_pct};">
+        <div class="project-compact-step-track"><span></span></div>
+        <div class="project-compact-step-labels">
+          {"".join(point_items)}
+        </div>
+      </div>
+    """
+
+
 def render_project_compact_card(project: EmergencyProject) -> str:
     metric = primary_metric(project)
     current_text = "입력 대기"
     target_text = "목표 미설정"
-    pct = None
+    metric_label = "정량 수혜지표"
     if metric is not None:
         current = metric_current(project, metric)
         current_text = format_metric_value(current, metric.unit, compact=True)
         target_text = metric.target_text
-        pct = metric_pct(current, metric.target_value)
-    bar_pct = 0 if pct is None else pct
-    pct_text = f"{pct:.1f}%" if pct is not None else "목표 미설정"
+        metric_label = metric.label
+    stage_markup = compact_stage_points_html(project)
     return f"""
       <article class="project-compact-card">
-        <div class="project-compact-top">
-          <span class="project-compact-number">{project.number:02d}</span>
-          <span class="project-compact-field">{safe_text(project.field)}</span>
-          <strong>{safe_text(project.status)}</strong>
-        </div>
-        <h3>{safe_text(project.title)}</h3>
-        <div class="project-compact-metric">
-          <span>현재 실적</span>
-          <strong>{safe_text(current_text)}</strong>
-          <em>목표 {safe_text(target_text)}</em>
-        </div>
-        <div class="project-compact-progress" style="--pct:{bar_pct:.3f};">
-          <span></span>
-        </div>
-        <div class="project-compact-pct">{safe_text(pct_text)}</div>
-        <dl class="project-compact-meta">
-          <div>
-            <dt>소관</dt>
-            <dd>{safe_text(project.department)}</dd>
+        <h3><span>{project.number}</span>{safe_text(project.title)}</h3>
+        <div class="project-compact-main">
+          <div class="project-compact-donut" style="--pct:{project.progress_pct};">
+            <span>진행률</span>
+            <strong>{project.progress_pct}%</strong>
           </div>
-          <div>
-            <dt>예산</dt>
-            <dd>{safe_text(project.budget)}</dd>
+          <div class="project-compact-info">
+            <em>{safe_text(project.status)}</em>
+            <p><b>목표</b>{safe_text(target_text)}</p>
+            <p><b>실적</b>{safe_text(current_text)}</p>
           </div>
-        </dl>
-        <div class="project-compact-status">
-          <span>{safe_text(project.status)}</span>
-          <em>{safe_text(project.latest_update)}</em>
         </div>
-        <p>{safe_text(project.milestone)}</p>
+        <div class="project-compact-meta">
+          <span>{safe_text(metric_label)}</span>
+          <strong>{safe_text(project.department)}</strong>
+        </div>
+        <div class="project-compact-budget">{safe_text(project.budget)}</div>
+        <div class="project-compact-stage-title">기획진행</div>
+        {stage_markup}
+        <div class="project-compact-note">
+          {safe_text(project.milestone)}
+        </div>
       </article>
     """
 
@@ -2227,12 +2253,22 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         f"""
         <section class="{board_class} notranslate" translate="no" lang="ko">
           <div class="project-board-head">
-            <div>
+            <div class="project-head-spacer"></div>
+            <div class="project-head-title">
               <h2>민생100일 비상대책 추진상황</h2>
             </div>
-            <div class="project-view-toggle" aria-label="추진상황 보기 방식">
-              <a class="{detail_class}" href="?view=check&layout=detail">상세형</a>
-              <a class="{compact_class}" href="?view=check&layout=compact">압축형</a>
+            <div class="project-head-actions">
+              <div class="project-overall-progress" style="--pct:{avg_progress};">
+                <i><b>{avg_progress}%</b></i>
+                <div>
+                  <span>10개 과제</span>
+                  <strong>평균 추진률</strong>
+                </div>
+              </div>
+              <div class="project-view-toggle" aria-label="추진상황 보기 방식">
+                <a class="{detail_class}" href="?view=check&layout=detail">상세형</a>
+                <a class="{compact_class}" href="?view=check&layout=compact">압축형</a>
+              </div>
             </div>
           </div>
           <div class="project-summary">
@@ -2247,10 +2283,6 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
             <div>
               <span>최신 입력 사업</span>
               <strong>{updated_project_count}개</strong>
-            </div>
-            <div>
-              <span>평균 추진률</span>
-              <strong>{avg_progress}%</strong>
             </div>
           </div>
           <div class="project-flow">
@@ -3279,19 +3311,81 @@ def inject_css() -> None:
         }
 
         .project-board-head {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          gap: 28px;
-          padding: 22px 0 6px;
+          display: grid;
+          grid-template-columns: minmax(220px, 1fr) auto minmax(300px, 1fr);
+          align-items: center;
+          gap: 24px;
+          padding: 26px 0 10px;
+        }
+
+        .project-head-title {
+          text-align: center;
         }
 
         .project-board-head h2 {
           margin: 0;
           color: #081521;
-          font-size: 32px;
+          font-size: clamp(36px, 3vw, 48px);
           font-weight: 900;
           letter-spacing: 0;
+          line-height: 1.15;
+          white-space: nowrap;
+        }
+
+        .project-head-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 12px;
+          min-width: 0;
+        }
+
+        .project-overall-progress {
+          min-width: 240px;
+          padding: 12px 14px;
+          border: 1px solid #d8e5f3;
+          border-radius: 18px;
+          background: #fff;
+          box-shadow: 0 12px 24px rgba(22, 39, 67, 0.08);
+        }
+
+        .project-overall-progress div {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 9px;
+        }
+
+        .project-overall-progress span {
+          color: #617086;
+          font-size: 12px;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .project-overall-progress strong {
+          color: #2563eb;
+          font-size: 28px;
+          font-weight: 950;
+          line-height: 1;
+          white-space: nowrap;
+        }
+
+        .project-overall-progress i {
+          display: block;
+          height: 9px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #e1e9f3;
+        }
+
+        .project-overall-progress i b {
+          display: block;
+          width: calc(var(--pct) * 1%);
+          height: 100%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, #2dd4bf 0%, #2563eb 100%);
         }
 
         .project-view-toggle {
@@ -3323,7 +3417,7 @@ def inject_css() -> None:
 
         .project-summary {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 16px;
           margin: 18px 0 18px;
         }
@@ -4290,6 +4384,352 @@ def inject_css() -> None:
 
         .project-compact-card p {
           color: #5b697a;
+        }
+
+        .project-board.compact {
+          max-width: 1680px;
+          margin: 22px auto 36px;
+          padding: 34px 38px 32px;
+          overflow: visible;
+          border: 1px solid #d3e3f1;
+          border-radius: 34px;
+          background:
+            radial-gradient(circle at 80% 6%, rgba(255, 255, 255, 0.95) 0 8%, rgba(255, 255, 255, 0) 22%),
+            linear-gradient(180deg, #f2f8fd 0%, #e5f0f8 100%);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.9),
+            0 20px 46px rgba(34, 58, 92, 0.11);
+        }
+
+        .project-board.compact .project-summary,
+        .project-board.compact .project-flow {
+          display: none;
+        }
+
+        .project-board.compact .project-board-head {
+          padding: 0 0 24px;
+          margin-bottom: 8px;
+          grid-template-columns: minmax(240px, 1fr) auto minmax(300px, 1fr);
+        }
+
+        .project-board.compact .project-board-head h2 {
+          font-size: clamp(34px, 2.7vw, 44px);
+          letter-spacing: 0;
+        }
+
+        .project-overall-progress {
+          display: inline-flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 238px;
+          padding: 10px 14px 10px 10px;
+          border: 1px solid #cddfed;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.96);
+          box-shadow: 0 14px 28px rgba(36, 62, 99, 0.1);
+        }
+
+        .project-overall-progress i {
+          position: relative;
+          display: inline-flex;
+          flex: 0 0 66px;
+          width: 66px;
+          height: 66px;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          border-radius: 999px;
+          background:
+            radial-gradient(circle, #fff 0 50%, transparent 51%),
+            conic-gradient(#0aa6a4 calc(var(--pct) * 1%), #d7e8ef 0);
+        }
+
+        .project-overall-progress i b {
+          position: relative;
+          z-index: 1;
+          display: inline;
+          width: auto;
+          height: auto;
+          border-radius: 0;
+          background: transparent;
+          color: #111827;
+          font-size: 17px;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .project-overall-progress div {
+          display: block;
+          margin: 0;
+        }
+
+        .project-overall-progress span,
+        .project-overall-progress strong {
+          display: block;
+          white-space: nowrap;
+        }
+
+        .project-overall-progress span {
+          color: #5c6b7d;
+          font-size: 12px;
+          font-weight: 900;
+          line-height: 1.2;
+        }
+
+        .project-overall-progress strong {
+          color: #0f172a;
+          font-size: 18px;
+          font-weight: 950;
+          line-height: 1.25;
+        }
+
+        .project-compact-grid {
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .project-compact-card,
+        .project-compact-card:nth-child(4n+2),
+        .project-compact-card:nth-child(4n+3),
+        .project-compact-card:nth-child(4n),
+        .project-compact-card:nth-child(3n+2),
+        .project-compact-card:nth-child(3n) {
+          min-height: 300px;
+          padding: 18px;
+          border: 1px solid #dce7f1;
+          border-top: 0;
+          border-radius: 18px;
+          background: rgba(255, 255, 255, 0.96);
+          color: #142033;
+          box-shadow: 0 14px 28px rgba(37, 59, 93, 0.1);
+        }
+
+        .project-compact-card h3 {
+          display: flex;
+          min-height: 52px;
+          align-items: flex-start;
+          gap: 6px;
+          margin: 0 0 15px;
+          color: #162236;
+          font-size: 18px;
+          font-weight: 950;
+          line-height: 1.27;
+          word-break: keep-all;
+        }
+
+        .project-compact-card h3 span {
+          flex: 0 0 auto;
+          color: #111827;
+          font-size: 18px;
+        }
+
+        .project-compact-main {
+          display: grid;
+          grid-template-columns: 88px minmax(0, 1fr);
+          gap: 13px;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .project-compact-donut {
+          display: inline-flex;
+          width: 82px;
+          height: 82px;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          border-radius: 999px;
+          background:
+            radial-gradient(circle, #fff 0 53%, transparent 54%),
+            conic-gradient(#0aa6a4 calc(var(--pct) * 1%), #d9ebef 0);
+          box-shadow: inset 0 0 0 1px rgba(13, 117, 128, 0.08);
+        }
+
+        .project-compact-donut span {
+          color: #4b596b;
+          font-size: 11px;
+          font-weight: 950;
+          line-height: 1.1;
+        }
+
+        .project-compact-donut strong {
+          color: #111827;
+          font-size: 20px;
+          font-weight: 950;
+          line-height: 1.05;
+        }
+
+        .project-compact-info {
+          min-width: 0;
+        }
+
+        .project-compact-info em {
+          display: inline-flex;
+          max-width: 100%;
+          margin-bottom: 7px;
+          padding: 4px 10px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #00a7a3;
+          color: #fff;
+          font-size: 11px;
+          font-style: normal;
+          font-weight: 950;
+          line-height: 1.2;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-compact-info p {
+          display: block;
+          min-height: 0;
+          margin: 3px 0;
+          overflow: hidden;
+          color: #26364c;
+          font-size: 12px;
+          font-weight: 850;
+          line-height: 1.34;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          word-break: keep-all;
+          -webkit-line-clamp: unset;
+        }
+
+        .project-compact-info p b {
+          display: inline-block;
+          min-width: 30px;
+          margin-right: 5px;
+          color: #718096;
+          font-weight: 950;
+        }
+
+        .project-compact-meta {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 8px;
+          align-items: center;
+          margin: 8px 0 8px;
+          padding: 8px 10px;
+          border-radius: 12px;
+          background: #f1f7fb;
+        }
+
+        .project-compact-meta span,
+        .project-compact-meta strong {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-compact-meta span {
+          color: #536376;
+          font-size: 11px;
+          font-weight: 950;
+        }
+
+        .project-compact-meta strong {
+          color: #102033;
+          font-size: 11px;
+          font-weight: 950;
+        }
+
+        .project-compact-budget {
+          min-height: 18px;
+          margin-bottom: 9px;
+          overflow: hidden;
+          color: #334155;
+          font-size: 12px;
+          font-weight: 850;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .project-compact-stage-title {
+          margin: 0 0 8px;
+          color: #142033;
+          font-size: 13px;
+          font-weight: 950;
+        }
+
+        .project-compact-steps {
+          padding: 0 2px;
+        }
+
+        .project-compact-step-track {
+          position: relative;
+          height: 7px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #dce7ee;
+        }
+
+        .project-compact-step-track span {
+          display: block;
+          width: calc(var(--pct) * 1%);
+          height: 100%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, #25c3bd 0%, #1b93cf 100%);
+        }
+
+        .project-compact-step-labels {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 4px;
+          margin-top: 8px;
+        }
+
+        .project-compact-step {
+          position: relative;
+          padding-top: 10px;
+          color: #4c5f74;
+          font-size: 11px;
+          font-weight: 900;
+          line-height: 1.18;
+          text-align: center;
+          word-break: keep-all;
+        }
+
+        .project-compact-step::before {
+          content: "";
+          position: absolute;
+          top: -1px;
+          left: 50%;
+          width: 11px;
+          height: 11px;
+          transform: translateX(-50%);
+          border: 2px solid #b8cad7;
+          border-radius: 999px;
+          background: #fff;
+        }
+
+        .project-compact-step.is-done::before,
+        .project-compact-step.is-current::before {
+          border-color: #18aaa6;
+          background: #18aaa6;
+        }
+
+        .project-compact-step.is-current {
+          color: #086b78;
+        }
+
+        .project-compact-note {
+          display: -webkit-box;
+          min-height: 30px;
+          margin-top: 12px;
+          overflow: hidden;
+          color: #5f6f81;
+          font-size: 11px;
+          font-weight: 850;
+          line-height: 1.35;
+          word-break: keep-all;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+        }
+
+        .project-board.compact .project-source {
+          margin-top: 20px;
+          color: #697a8d;
+          font-size: 12px;
         }
 
         .status-strip {
@@ -5456,16 +5896,30 @@ def inject_css() -> None:
           }
 
           .project-board-head {
-            display: block;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
             padding-top: 18px;
+            text-align: center;
+          }
+
+          .project-head-spacer {
+            display: none;
           }
 
           .project-board-head h2 {
-            font-size: 24px;
+            font-size: 28px;
+            white-space: normal;
           }
 
-          .project-view-toggle {
-            margin-top: 14px;
+          .project-head-actions {
+            justify-content: center;
+            flex-wrap: wrap;
+          }
+
+          .project-overall-progress {
+            width: min(100%, 320px);
+            min-width: 0;
           }
 
           .project-board-head p {
