@@ -399,10 +399,15 @@ DISPLAY_PROJECT_TITLES = {
 }
 
 
-DISPLAY_METRIC_LIMITS = {
-    "P003": 3,
-    "P006": 3,
-    "P010": 2,
+DISPLAY_METRIC_GROUPS = {
+    "P003": (
+        ("유가연동보조금 지급액", ("fuel_subsidy_amount",), "400억원", "만원"),
+        ("화물차 보험료 지원액/대수", ("truck_insurance_amount", "truck_insurance_vehicles"), "60억원 / 30,000대", "만원, 대"),
+    ),
+    "P006": (
+        ("공공배달 쿠폰 지급액", ("delivery_coupon_amount",), "60억원", "만원"),
+        ("동백전 QR결제 쿠폰/비중", ("qr_coupon_amount", "qr_payment_share"), "20억원 / 14%", "만원, %"),
+    ),
 }
 
 
@@ -2464,39 +2469,74 @@ def display_actual_text(value: float | None, unit: str) -> str:
     return format_metric_value(value, unit, compact=True)
 
 
+def display_group_actual_text(
+    project: EmergencyProject, metric_ids: tuple[str, ...]
+) -> tuple[str, bool]:
+    metric_map = {metric.metric_id: metric for metric in project_metrics(project.project_id)}
+    values: list[str] = []
+    has_value = False
+    for metric_id in metric_ids:
+        metric = metric_map.get(metric_id)
+        if metric is None:
+            continue
+        current = metric_current(project, metric)
+        if current is None:
+            values.append("입력 대기")
+            continue
+        has_value = True
+        values.append(format_metric_value(current, metric.unit, compact=True))
+    if not values or not has_value:
+        return "입력 대기", True
+    return " / ".join(values), False
+
+
+def display_metric_groups(project: EmergencyProject) -> list[tuple[str, str, str, str, bool]]:
+    grouped = DISPLAY_METRIC_GROUPS.get(project.project_id)
+    if grouped:
+        rows: list[tuple[str, str, str, str, bool]] = []
+        for label, metric_ids, target_text, unit_text in grouped:
+            current_text, waiting = display_group_actual_text(project, tuple(metric_ids))
+            rows.append((label, target_text, unit_text, current_text, waiting))
+        return rows
+    rows = []
+    for metric in list(project_metrics(project.project_id))[:2]:
+        current = metric_current(project, metric)
+        current_text = format_metric_value(current, metric.unit, compact=True)
+        rows.append((metric.label, metric.target_text, metric.unit, current_text, current is None))
+    return rows
+
+
 def display_metric_rows_html(project: EmergencyProject) -> str:
-    metrics = list(project_metrics(project.project_id))[
-        : DISPLAY_METRIC_LIMITS.get(project.project_id, 2)
-    ]
+    metrics = display_metric_groups(project)
     if not metrics:
         return """
           <div class="display-metric-row">
-            <strong>정량 수혜지표</strong>
+            <div class="display-metric-title">
+              <strong>정량 수혜지표</strong>
+            </div>
             <div class="display-metric-values">
               <p><span>목표</span><b>목표 미설정</b></p>
+              <i></i>
               <p><span>실적</span><b class="is-waiting">입력 대기</b></p>
             </div>
-            <i><em></em></i>
           </div>
         """
     rows: list[str] = []
-    for metric in metrics:
-        current = metric_current(project, metric)
-        current_text = display_actual_text(current, metric.unit)
-        waiting_class = " is-waiting" if current is None else ""
-        pct = metric_pct(current, metric.target_value)
-        pct_text = "달성률 산정 대기" if pct is None else f"달성률 {pct:.1f}%"
-        bar_pct = 0.0 if pct is None else pct
+    for label, target_text, unit_text, current_text, waiting in metrics:
+        waiting_class = " is-waiting" if waiting else ""
+        unit_markup = f'<em>(단위: {safe_text(unit_text)})</em>' if unit_text else ""
         rows.append(
             f"""
-            <div class="display-metric-row" style="--metric-pct:{bar_pct:.3f};">
-              <strong>{safe_text(metric.label)}</strong>
+            <div class="display-metric-row">
+              <div class="display-metric-title">
+                <strong>{safe_text(label)}</strong>
+                {unit_markup}
+              </div>
               <div class="display-metric-values">
-                <p><span>목표</span><b>{safe_text(metric.target_text)}</b></p>
+                <p><span>목표</span><b>{safe_text(target_text)}</b></p>
+                <i></i>
                 <p><span>실적</span><b class="{waiting_class.strip()}">{safe_text(current_text)}</b></p>
               </div>
-              <em>{safe_text(pct_text)}</em>
-              <i><b></b></i>
             </div>
             """
         )
@@ -2550,9 +2590,15 @@ def display_project_card(project: EmergencyProject) -> str:
         <div class="display-card-metrics">
           {display_metric_rows_html(project)}
         </div>
-        <div class="display-card-meta">
-          <p><span>예산</span><b>{safe_text(project.budget)}</b></p>
-          <p><span>담당부서</span><b>{safe_text(project.department)}</b></p>
+        <div class="display-card-foot">
+          <div class="display-card-meta">
+            <p><span>예산</span><b>{safe_text(project.budget)}</b></p>
+            <p><span>담당부서</span><b>{safe_text(project.department)}</b></p>
+          </div>
+          <div class="display-card-mini-gauge" style="--pct:{progress:.2f}; --arc-deg:{max(progress, 12.0) * 1.8:.2f}deg;">
+            <span>진행률</span>
+            <strong>{progress:.0f}%</strong>
+          </div>
         </div>
         {display_stage_points_html(project)}
       </article>
@@ -7232,7 +7278,8 @@ def inject_css() -> None:
 
         .display-metric-values b.is-waiting {
           color: #1b2540;
-          font-size: 9.5px;
+          font-size: 8px;
+          line-height: 1;
           letter-spacing: -0.03em;
         }
 
@@ -7368,6 +7415,302 @@ def inject_css() -> None:
         .display-stage-point.is-current::before {
           border-color: var(--accent);
           background: var(--accent);
+        }
+
+        .display-board-page {
+          min-width: 1500px;
+          background: #e6f1ff;
+        }
+
+        .display-hero {
+          min-height: 176px;
+          grid-template-columns: minmax(620px, 1fr) minmax(360px, 460px) 250px;
+          padding: 24px 48px 0;
+        }
+
+        .display-hero-copy h1 {
+          font-size: clamp(44px, 4.0vw, 68px);
+          letter-spacing: -0.055em;
+        }
+
+        .display-dday-card {
+          width: 212px;
+          height: 72px;
+          font-size: 46px;
+        }
+
+        .display-overall-gauge {
+          width: 300px;
+          height: 150px;
+          min-width: 300px;
+          min-height: 150px;
+        }
+
+        .display-overall-gauge strong {
+          bottom: 14px;
+          font-size: 50px;
+        }
+
+        .display-card-zone {
+          padding: 34px 48px 28px;
+        }
+
+        .display-project-grid {
+          gap: 16px 24px;
+        }
+
+        .display-project-card {
+          height: 374px;
+          min-height: 374px;
+          padding: 16px 18px 13px;
+          border-radius: 10px;
+          box-shadow: 0 18px 34px rgba(27, 81, 143, 0.16);
+        }
+
+        .display-card-field {
+          margin-bottom: 4px;
+          font-size: 10px;
+        }
+
+        .display-card-field span {
+          width: 13px;
+          height: 13px;
+          border-radius: 3px;
+          background: transparent;
+        }
+
+        .display-project-card h3 {
+          min-height: 52px;
+          max-height: 52px;
+          margin-bottom: 4px;
+          color: #09083b;
+          font-size: clamp(20px, 1.28vw, 25px);
+          line-height: 1.18;
+          letter-spacing: -0.06em;
+        }
+
+        .display-card-gauge {
+          width: 168px;
+          height: 84px;
+          margin: 2px auto 6px;
+        }
+
+        .display-card-gauge::after {
+          left: 24px;
+          right: 24px;
+          top: 24px;
+        }
+
+        .display-card-gauge-value {
+          bottom: -2px;
+        }
+
+        .display-card-gauge-value span {
+          font-size: 10px;
+          color: #8b92a2;
+        }
+
+        .display-card-gauge-value strong {
+          color: #120a58;
+          font-size: 38px;
+          line-height: 0.9;
+        }
+
+        .display-card-metrics {
+          gap: 5px;
+          margin-top: 0;
+        }
+
+        .display-metric-row {
+          min-height: 44px;
+          padding: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+          box-shadow: none;
+        }
+
+        .display-metric-title {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 8px;
+          min-height: 16px;
+          margin-bottom: 2px;
+        }
+
+        .display-metric-title strong {
+          color: var(--accent);
+          font-size: 10px;
+          font-weight: 950;
+          line-height: 1.1;
+          letter-spacing: -0.04em;
+          word-break: keep-all;
+        }
+
+        .display-metric-title em {
+          color: #8a93a4;
+          font-size: 8px;
+          font-style: normal;
+          font-weight: 850;
+          white-space: nowrap;
+        }
+
+        .display-metric-values {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 1px minmax(76px, auto);
+          gap: 8px;
+          align-items: end;
+        }
+
+        .display-metric-values p,
+        .display-metric-values p:nth-child(2) {
+          min-width: 0;
+          margin: 0;
+          padding: 0;
+          border-radius: 0;
+          background: transparent;
+        }
+
+        .display-metric-values > i {
+          width: 1px;
+          height: 18px;
+          background: #cfdbea;
+        }
+
+        .display-metric-values span {
+          color: #7e8798;
+          font-size: 8px;
+          font-weight: 850;
+          line-height: 1;
+        }
+
+        .display-metric-values b {
+          margin-top: 2px;
+          color: #09083b;
+          font-size: 13px;
+          font-weight: 950;
+          line-height: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .display-metric-values p:last-child b {
+          color: #09083b;
+          font-size: 18px;
+          letter-spacing: -0.06em;
+          text-align: right;
+        }
+
+        .display-metric-values b.is-waiting {
+          color: #09083b;
+          font-size: 16px;
+          line-height: 1;
+          letter-spacing: -0.07em;
+        }
+
+        .display-card-foot {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 56px;
+          gap: 10px;
+          align-items: center;
+          margin-top: 8px;
+          padding-top: 10px;
+          border-top: 2px solid #e2ebf5;
+        }
+
+        .display-card-meta {
+          display: grid;
+          gap: 3px;
+          margin: 0;
+          padding: 0;
+          border-radius: 0;
+          background: transparent;
+        }
+
+        .display-card-meta p {
+          grid-template-columns: 38px minmax(0, 1fr);
+          gap: 7px;
+          font-size: 10px;
+          line-height: 1.18;
+        }
+
+        .display-card-meta span {
+          color: #7e8798;
+          font-weight: 900;
+        }
+
+        .display-card-meta b {
+          color: #07142b;
+          font-weight: 950;
+          -webkit-line-clamp: 2;
+        }
+
+        .display-card-mini-gauge {
+          position: relative;
+          width: 54px;
+          height: 54px;
+          border-radius: 50%;
+          display: grid;
+          place-items: center;
+          background:
+            conic-gradient(var(--accent) 0deg, var(--accent-2) calc(var(--pct) * 3.6deg), #eaf1fb calc(var(--pct) * 3.6deg), #eaf1fb 360deg);
+        }
+
+        .display-card-mini-gauge::after {
+          content: "";
+          position: absolute;
+          inset: 8px;
+          border-radius: 50%;
+          background: #fff;
+        }
+
+        .display-card-mini-gauge span,
+        .display-card-mini-gauge strong {
+          position: relative;
+          z-index: 1;
+          display: block;
+          text-align: center;
+        }
+
+        .display-card-mini-gauge span {
+          color: #7d8798;
+          font-size: 8px;
+          font-weight: 900;
+          line-height: 1;
+        }
+
+        .display-card-mini-gauge strong {
+          margin-top: 1px;
+          color: #120a58;
+          font-size: 18px;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .display-stage-track {
+          padding-top: 12px;
+        }
+
+        .display-stage-line {
+          height: 4px;
+        }
+
+        .display-stage-labels {
+          margin-top: 5px;
+        }
+
+        .display-stage-point {
+          color: #263953;
+          font-size: 8.2px;
+          line-height: 1.12;
+        }
+
+        .display-stage-point::before {
+          top: -12px;
+          width: 8px;
+          height: 8px;
         }
 
         div[data-testid="stDataFrame"] {
