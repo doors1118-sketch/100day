@@ -351,22 +351,22 @@ PROJECT_STAGE_MAP: dict[str, tuple[str, ...]] = {
 
 PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
     "P001": (
-        ProjectMetric("loan_amount", "대출실행금액·지원 소상공인 수", "만원", 120_000_000, "1조 2,000억원 · 40,000명", True),
+        ProjectMetric("loan_amount", "대출실행금액", "만원", 120_000_000, "1조 2,000억원", True),
         ProjectMetric("beneficiary_count", "지원 소상공인 수", "명", 40_000, "40,000명"),
     ),
     "P002": (
-        ProjectMetric("voucher_amount", "바우처 지급액·지급 개소", "만원", 5_600_000, "560억원 · 28만개소", True),
+        ProjectMetric("voucher_amount", "바우처 지급액", "만원", 5_600_000, "560억원", True),
         ProjectMetric("voucher_places", "바우처 지급 개소", "개소", 280_000, "28만개소"),
     ),
     "P003": (
-        ProjectMetric("fuel_subsidy_amount", "유가보조·보험료·산재보험료 지원", "만원", 4_000_000, "400억원 · 30,000대 · 4,000명", True),
+        ProjectMetric("fuel_subsidy_amount", "유가연동보조금 지급액", "만원", 4_000_000, "400억원", True),
         ProjectMetric("truck_insurance_amount", "화물차 보험료 지원액", "만원", 600_000, "60억원"),
         ProjectMetric("truck_insurance_vehicles", "화물차 보험료 지원 대수", "대", 30_000, "30,000대"),
         ProjectMetric("accident_insurance_amount", "플랫폼 노동자 산재보험료 지원액", "만원", 80_000, "8억원"),
         ProjectMetric("accident_insurance_people", "플랫폼 노동자 산재보험료 지원 인원", "명", 4_000, "4,000명"),
     ),
     "P004": (
-        ProjectMetric("qr_merchant_increase", "QR 가맹점·수수료 감면 적용", "개소", 4_000, "+4,000개소 · 14만개소 · 12.5억원", True),
+        ProjectMetric("qr_merchant_increase", "QR 등록 가맹점 증가 수", "개소", 4_000, "+4,000개소", True),
         ProjectMetric("fee_reduction_amount", "카드결제 수수료 감면액", "만원", 125_000, "12.5억원"),
         ProjectMetric("fee_reduction_merchants", "수수료 감면 적용 가맹점 수", "개소", 140_000, "14만개소"),
     ),
@@ -376,7 +376,7 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
         ProjectMetric("cashback_users", "캐시백 적용 이용자 수", "명", None, "부서 목표 입력"),
     ),
     "P006": (
-        ProjectMetric("delivery_coupon_amount", "공공배달 쿠폰 지급액·QR 결제비중", "만원", 600_000, "60억원 · QR결제비중 14%", True),
+        ProjectMetric("delivery_coupon_amount", "공공배달 쿠폰 지급액", "만원", 600_000, "60억원", True),
         ProjectMetric("qr_payment_share", "동백전 월간 QR결제 비중", "%", 14, "14%"),
         ProjectMetric("qr_coupon_amount", "QR 결제 쿠폰 지급액", "만원", 200_000, "20억원"),
         ProjectMetric("coupon_used_count", "쿠폰 사용 건수", "건", None, "부서 목표 입력"),
@@ -2242,22 +2242,51 @@ def compact_hover_detail_html(project: EmergencyProject) -> str:
     """
 
 
-def render_project_compact_card(project: EmergencyProject) -> str:
-    metric = primary_metric(project)
-    current_text = "입력 대기"
-    target_text = "목표 미설정"
-    metric_label = "정량 수혜지표"
-    metric_bar_pct = 0.0
-    metric_pct_text = "달성률 산정 대기"
-    if metric is not None:
+def compact_metric_bars_html(project: EmergencyProject, limit: int = 2) -> str:
+    metrics = list(project_metrics(project.project_id))[:limit]
+    if not metrics:
+        return """
+        <div class="project-compact-kpi">
+          <div class="project-compact-kpi-item" style="--metric-pct:0;">
+            <span class="project-compact-kpi-name">정량 수혜지표</span>
+            <div class="project-compact-kpi-values">
+              <p><b>목표</b><strong>목표 미설정</strong></p>
+              <p><b>실적</b><strong>입력 대기</strong></p>
+            </div>
+            <em>달성률 산정 대기</em>
+            <i><b></b></i>
+          </div>
+        </div>
+        """
+    items = []
+    for metric in metrics:
         current = metric_current(project, metric)
         current_text = format_metric_value(current, metric.unit, compact=True)
-        target_text = metric.target_text
-        metric_label = metric.label
         pct = metric_pct(current, metric.target_value)
-        if pct is not None:
-            metric_bar_pct = pct
-            metric_pct_text = f"달성률 {pct:.1f}%"
+        metric_bar_pct = 0.0 if pct is None else pct
+        metric_pct_text = "달성률 산정 대기" if pct is None else f"달성률 {pct:.1f}%"
+        items.append(
+            f"""
+            <div class="project-compact-kpi-item" style="--metric-pct:{metric_bar_pct:.3f};">
+              <span class="project-compact-kpi-name">{safe_text(metric.label)}</span>
+              <div class="project-compact-kpi-values">
+                <p><b>목표</b><strong>{safe_text(metric.target_text)}</strong></p>
+                <p><b>실적</b><strong>{safe_text(current_text)}</strong></p>
+              </div>
+              <em>{safe_text(metric_pct_text)}</em>
+              <i><b></b></i>
+            </div>
+            """
+        )
+    return f"""
+      <div class="project-compact-kpi">
+        {"".join(items)}
+      </div>
+    """
+
+
+def render_project_compact_card(project: EmergencyProject) -> str:
+    metric_markup = compact_metric_bars_html(project)
     stage_markup = compact_stage_points_html(project)
     hover_detail = compact_hover_detail_html(project)
     return f"""
@@ -2274,16 +2303,7 @@ def render_project_compact_card(project: EmergencyProject) -> str:
             <strong>{project.progress_pct}%</strong>
           </div>
         </div>
-        <div class="project-compact-kpi" style="--metric-pct:{metric_bar_pct:.3f};">
-          <span>{safe_text(metric_label)}</span>
-          <div class="project-compact-kpi-values">
-            <p><b>목표</b><strong>{safe_text(target_text)}</strong></p>
-            <p><b>실적</b><strong>{safe_text(current_text)}</strong></p>
-          </div>
-          <em>{safe_text(metric_pct_text)}</em>
-          <i><b></b></i>
-        </div>
-        <div class="project-compact-stage-title">추진상황</div>
+        {metric_markup}
         {stage_markup}
         {hover_detail}
       </article>
@@ -4637,19 +4657,32 @@ def inject_css() -> None:
         }
 
         .project-compact-kpi {
-          margin: 0 0 10px;
-          padding: 9px 10px 10px;
+          display: grid;
+          gap: 7px;
+          margin: 0 0 8px;
+          padding: 10px 10px 9px;
           border: 1px solid #e3edf5;
           border-radius: 13px;
           background: #f7fbff;
           text-align: center;
         }
 
-        .project-compact-kpi span {
+        .project-compact-kpi-item {
+          min-width: 0;
+          padding: 0 0 7px;
+          border-bottom: 1px solid #e6eef7;
+        }
+
+        .project-compact-kpi-item:last-child {
+          padding-bottom: 0;
+          border-bottom: 0;
+        }
+
+        .project-compact-kpi-name {
           display: block;
           overflow: hidden;
           color: #4d5d75;
-          font-size: 12px;
+          font-size: 12.5px;
           font-weight: 950;
           line-height: 1.2;
           text-overflow: ellipsis;
@@ -4660,7 +4693,7 @@ def inject_css() -> None:
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 6px;
-          margin-top: 6px;
+          margin-top: 5px;
         }
 
         .project-compact-kpi-values p {
@@ -4671,9 +4704,9 @@ def inject_css() -> None:
 
         .project-compact-kpi-values b {
           display: block;
-          margin-bottom: 4px;
+          margin-bottom: 3px;
           color: #6b7788;
-          font-size: 14px;
+          font-size: 13.5px;
           font-weight: 950;
           line-height: 1;
         }
@@ -4682,7 +4715,7 @@ def inject_css() -> None:
           display: -webkit-box;
           overflow: hidden;
           color: #111827;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 950;
           line-height: 1.12;
           white-space: normal;
@@ -4693,12 +4726,12 @@ def inject_css() -> None:
 
         .project-compact-kpi em {
           display: inline-flex;
-          margin-top: 6px;
-          padding: 3px 7px;
+          margin-top: 5px;
+          padding: 3px 6px;
           border-radius: 3px;
           background: #f8caca;
           color: #c2413d;
-          font-size: 11px;
+          font-size: 10.5px;
           font-style: normal;
           font-weight: 950;
           line-height: 1;
@@ -4706,8 +4739,8 @@ def inject_css() -> None:
 
         .project-compact-kpi i {
           display: block;
-          height: 15px;
-          margin-top: 8px;
+          height: 9px;
+          margin-top: 6px;
           overflow: hidden;
           border-radius: 2px;
           background: #d6d9ef;
