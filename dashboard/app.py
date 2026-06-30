@@ -4739,6 +4739,12 @@ def inject_css() -> None:
         .project-compact-card h3 .project-title-sub {
           display: inline-block;
           margin-top: 1px;
+          color: inherit;
+          font: inherit;
+          font-size: inherit;
+          font-weight: inherit;
+          letter-spacing: inherit;
+          line-height: inherit;
         }
 
         .project-compact-card.project-P010 h3 {
@@ -4781,6 +4787,21 @@ def inject_css() -> None:
           box-shadow: 0 4px 10px rgba(37, 99, 235, 0.08);
         }
 
+        .project-compact-kpi-item:nth-child(2) {
+          border-color: rgba(0, 137, 123, 0.24);
+          background: #f3fffb;
+        }
+
+        .project-compact-kpi-item:nth-child(3) {
+          border-color: rgba(104, 73, 196, 0.24);
+          background: #fbf8ff;
+        }
+
+        .project-compact-kpi-item:nth-child(4) {
+          border-color: rgba(217, 119, 6, 0.24);
+          background: #fffaf0;
+        }
+
         .project-compact-kpi-item:last-child {
           padding-bottom: 5px;
         }
@@ -4804,6 +4825,24 @@ def inject_css() -> None:
           white-space: nowrap;
         }
 
+        .project-compact-kpi-item:nth-child(2) .project-compact-kpi-name {
+          border-color: rgba(0, 121, 107, 0.3);
+          background: linear-gradient(135deg, #00796b 0%, #00b894 100%);
+          box-shadow: 0 5px 12px rgba(0, 137, 123, 0.18);
+        }
+
+        .project-compact-kpi-item:nth-child(3) .project-compact-kpi-name {
+          border-color: rgba(104, 73, 196, 0.3);
+          background: linear-gradient(135deg, #5b3fb4 0%, #8b5cf6 100%);
+          box-shadow: 0 5px 12px rgba(104, 73, 196, 0.18);
+        }
+
+        .project-compact-kpi-item:nth-child(4) .project-compact-kpi-name {
+          border-color: rgba(217, 119, 6, 0.3);
+          background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+          box-shadow: 0 5px 12px rgba(217, 119, 6, 0.18);
+        }
+
         .project-compact-kpi-values {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -4823,6 +4862,30 @@ def inject_css() -> None:
 
         .project-compact-kpi-values p:last-child {
           background: #d9f8ef;
+        }
+
+        .project-compact-kpi-item:nth-child(2) .project-compact-kpi-values p {
+          background: #dff7f1;
+        }
+
+        .project-compact-kpi-item:nth-child(2) .project-compact-kpi-values p:last-child {
+          background: #d7f3ff;
+        }
+
+        .project-compact-kpi-item:nth-child(3) .project-compact-kpi-values p {
+          background: #eee7ff;
+        }
+
+        .project-compact-kpi-item:nth-child(3) .project-compact-kpi-values p:last-child {
+          background: #f6e6ff;
+        }
+
+        .project-compact-kpi-item:nth-child(4) .project-compact-kpi-values p {
+          background: #fff0c7;
+        }
+
+        .project-compact-kpi-item:nth-child(4) .project-compact-kpi-values p:last-child {
+          background: #ffe8d0;
         }
 
         .project-compact-kpi-values b {
@@ -4890,6 +4953,21 @@ def inject_css() -> None:
           box-shadow:
             0 0 12px rgba(31, 128, 255, 0.5),
             inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .project-compact-kpi-item:nth-child(2) i b {
+          background: linear-gradient(90deg, #00897b 0%, #00d084 100%);
+          box-shadow: 0 0 12px rgba(0, 137, 123, 0.48);
+        }
+
+        .project-compact-kpi-item:nth-child(3) i b {
+          background: linear-gradient(90deg, #5b3fb4 0%, #a855f7 100%);
+          box-shadow: 0 0 12px rgba(104, 73, 196, 0.45);
+        }
+
+        .project-compact-kpi-item:nth-child(4) i b {
+          background: linear-gradient(90deg, #d97706 0%, #f97316 100%);
+          box-shadow: 0 0 12px rgba(217, 119, 6, 0.42);
         }
 
         .project-compact-main {
