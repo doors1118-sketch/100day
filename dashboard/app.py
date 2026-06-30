@@ -237,7 +237,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         1,
         "경영위기 소상공인 1% 저리대출",
         "소상공인 경영개선 지원",
-        "디지털경제실",
+        "경제정책과",
         "1조 2,000억원",
         "부산시 소재 소상공인 최대 1억원 대출보증, 최초 1년간 실부담이자 1.0%",
         "2026.6.~8. 추진계획 수립·MOU 체결·전산 개발, 2026.9. 추경 확보 후 자금지원 공고 및 접수",
@@ -247,7 +247,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         2,
         "소상공인 에너지 바우처 지급, 공공요금·지방세 부담 완화",
         "소상공인 경영개선 지원",
-        "디지털경제실",
+        "중소상공인지원과\n경제정책과\n세정운영담당관",
         "560억원",
         "연매출 10억원 이하 소상공인 에너지 바우처 지급, 공공요금 7종 동결 및 지방세 세정지원",
         "2026.6.~ 사업계획 수립·지급시스템 검토, 2026.9. 추경 확보 및 조례 개정, 2026.10.~ 바우처 지급",
@@ -257,7 +257,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         3,
         "화물차주·택배 종사자 등 특별 지원",
         "소상공인 경영개선 지원",
-        "교통혁신국·디지털경제실",
+        "트라이포트기획과\n일자리노동과",
         "466.35억원",
         "화물차 유가연동보조금 추가 지원, 화물차 보험료 지원, 배달종사자 산재보험료 지원",
         "2026.6.~7. 관련기관 협의 및 세부계획 수립, 2026.9. 추경 확보 후 홍보·신청접수·지원금 지급",
@@ -267,7 +267,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         4,
         "동백전 카드수수료 부담 완화",
         "소상공인 경영개선 지원",
-        "디지털경제실",
+        "중소상공인지원과",
         "14.5억원",
         "동백전 QR 가맹점 집중 확대와 연매출 10억원 이하 가맹점 카드수수료 0.15% 하향",
         "2026.7.~12. QR 가맹점 확대, 2026.7.~8. 시스템 개발, 2026.9. 추경 확보 및 조례 개정, 2026.10.~12. 수수료 감면",
@@ -277,7 +277,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         5,
         "동백전 캐시백 15% 한시 상향",
         "시민부담 경감 및 상권활성화",
-        "디지털경제실",
+        "중소상공인지원과",
         "513억원",
         "동백전 캐시백률 5% 상향과 요일·업종별 특화 캐시백 운영",
         "2026.7.~ 국비 지원비율 및 추가지원 건의·하반기 계획 수립, 2026.9. 추경 확보 및 캐시백 정책 발표, 2026.9.~12. 상향 캐시백 적용",
@@ -287,7 +287,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         6,
         "소비활력 쿠폰 지급",
         "시민부담 경감 및 상권활성화",
-        "디지털경제실",
+        "중소상공인지원과\n경제정책과",
         "150억원",
         "공공배달서비스 할인쿠폰과 동백전 QR 결제 전용 소비활력 쿠폰 지급",
         "2026.7. 사업계획 수립, 2026.9. 추경 확보 및 조례 개정, 2026.9.~12. 소비활력 쿠폰 지급",
@@ -297,7 +297,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         7,
         "1만원 임대료 1,000개 빈 점포 활용 민생상권 회복",
         "시민부담 경감 및 상권활성화",
-        "디지털경제실",
+        "중소상공인지원과",
         "5억원",
         "1~2개 권역 내 빈 점포를 활용해 임차료·인테리어·운영비를 지원하고 민생상권 회복 추진",
         "2026.7. 사업계획 수립·공실점포 DB 구축, 2026.7.~8. 건물주 협약, 2026.9.~11. 시범사업 추진, 2026.12. 성과 발표",
@@ -307,7 +307,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         8,
         "공공근로형 민생지킴이 운영, 공공일자리 확대",
         "민생 안전망 구축",
-        "디지털경제실·사회복지국",
+        "일자리노동과\n노인복지과\n장애인복지과",
         "68.3억원",
         "공공근로형 민생지킴이 추가 운영 등 취약계층 공공일자리 30% 이상 확대",
         "2026.7. 수요기관 발굴 및 세부계획 수립, 2026.8.~9. 추경 확보, 2026.9. 사업비 교부 및 참여자 선발, 2026.10.~12. 확대 운영",
@@ -317,7 +317,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         9,
         "민생재기 원스톱 100일 프로젝트",
         "민생 안전망 구축",
-        "디지털경제실",
+        "중소상공인지원과\n경제정책과",
         "4억원",
         "파산·회생·채무조정 등 상담부터 신청·접수·후속지원까지 원스톱 패스트트랙 구축",
         "2026.7.~ 사업계획 수립·MOU 체결·전문인력 모집, 2026.7.~10. 이동버스 운영·현장상담·홍보, 2026.11.~12. 심층상담·후속조치",
@@ -327,7 +327,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         10,
         "민생금융범죄 특별사법경찰제도 조속 도입",
         "민생 안전망 구축",
-        "시민안전실",
+        "특별사법경찰과\n(경제정책과)",
         "비예산",
         "불법사금융·불법고금리·불법추심 등 민생경제 범죄 수사체계 구축",
         "2026.7.~ 민생경제수사TF 구성·특사경 지명 및 업무 개시, 2026.9.~ 민생경제수사팀 신설",
@@ -351,30 +351,33 @@ PROJECT_STAGE_MAP: dict[str, tuple[str, ...]] = {
 
 PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
     "P001": (
-        ProjectMetric("loan_amount", "대출실행금액", "만원", 120_000_000, "1조 2,000억원", True),
-        ProjectMetric("beneficiary_count", "지원 소상공인 수", "명", 40_000, "4만명 이상"),
+        ProjectMetric("loan_amount", "대출실행금액·지원 소상공인 수", "만원", 120_000_000, "1조 2,000억원 · 40,000명", True),
+        ProjectMetric("beneficiary_count", "지원 소상공인 수", "명", 40_000, "40,000명"),
     ),
     "P002": (
-        ProjectMetric("voucher_amount", "바우처 지급액", "만원", 5_600_000, "560억원", True),
+        ProjectMetric("voucher_amount", "바우처 지급액·지급 개소", "만원", 5_600_000, "560억원 · 28만개소", True),
         ProjectMetric("voucher_places", "바우처 지급 개소", "개소", 280_000, "28만개소"),
     ),
     "P003": (
-        ProjectMetric("fuel_subsidy_amount", "유가연동보조금 지급액", "만원", 4_000_000, "400억원", True),
+        ProjectMetric("fuel_subsidy_amount", "유가보조·보험료·산재보험료 지원", "만원", 4_000_000, "400억원 · 30,000대 · 4,000명", True),
         ProjectMetric("truck_insurance_amount", "화물차 보험료 지원액", "만원", 600_000, "60억원"),
         ProjectMetric("truck_insurance_vehicles", "화물차 보험료 지원 대수", "대", 30_000, "30,000대"),
-        ProjectMetric("accident_insurance_amount", "산재보험료 지원액", "만원", 60_000, "6억원"),
-        ProjectMetric("accident_insurance_people", "산재보험료 지원 인원", "명", 3_000, "3,000명"),
+        ProjectMetric("accident_insurance_amount", "플랫폼 노동자 산재보험료 지원액", "만원", 80_000, "8억원"),
+        ProjectMetric("accident_insurance_people", "플랫폼 노동자 산재보험료 지원 인원", "명", 4_000, "4,000명"),
     ),
     "P004": (
-        ProjectMetric("qr_merchant_increase", "QR 등록 가맹점 증가 수", "개소", 4_000, "+4,000개소", True),
+        ProjectMetric("qr_merchant_increase", "QR 가맹점·수수료 감면 적용", "개소", 4_000, "+4,000개소 · 14만개소 · 12.5억원", True),
         ProjectMetric("fee_reduction_amount", "카드결제 수수료 감면액", "만원", 125_000, "12.5억원"),
         ProjectMetric("fee_reduction_merchants", "수수료 감면 적용 가맹점 수", "개소", 140_000, "14만개소"),
     ),
     "P005": (
-        ProjectMetric("cashback_amount", "상향 캐시백 집행액", "만원", 5_130_000, "513억원", True),
+        ProjectMetric("dongbaek_issue_amount", "동백전 발행액", "만원", 200_000_000, "2조원", True),
+        ProjectMetric("cashback_amount", "상향 캐시백 집행액", "만원", 5_130_000, "513억원"),
+        ProjectMetric("cashback_users", "캐시백 적용 이용자 수", "명", None, "부서 목표 입력"),
     ),
     "P006": (
-        ProjectMetric("delivery_coupon_amount", "공공배달 쿠폰 지급액", "만원", 600_000, "60억원", True),
+        ProjectMetric("delivery_coupon_amount", "공공배달 쿠폰 지급액·QR 결제비중", "만원", 600_000, "60억원 · QR결제비중 14%", True),
+        ProjectMetric("qr_payment_share", "동백전 월간 QR결제 비중", "%", 14, "14%"),
         ProjectMetric("qr_coupon_amount", "QR 결제 쿠폰 지급액", "만원", 200_000, "20억원"),
         ProjectMetric("coupon_used_count", "쿠폰 사용 건수", "건", None, "부서 목표 입력"),
     ),
@@ -390,8 +393,9 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
         ProjectMetric("application_cost_cases", "신청비용 지원 건수", "건", 180, "180건"),
     ),
     "P010": (
-        ProjectMetric("joint_investigation_cases", "합동수사실적", "건", None, "부서 목표 입력", True),
+        ProjectMetric("joint_investigation_cases", "기획수사·합동단속", "회", 1, "1회", True),
         ProjectMetric("report_consult_cases", "신고·상담 접수 건수", "건", None, "부서 목표 입력"),
+        ProjectMetric("investigation_start_cases", "수사 착수 건수", "건", None, "부서 목표 입력"),
         ProjectMetric("relief_link_cases", "피해구제 연계 건수", "건", None, "부서 목표 입력"),
     ),
 }
@@ -2263,7 +2267,7 @@ def render_project_compact_card(project: EmergencyProject) -> str:
           <div class="project-compact-info">
             <em>{safe_text(project.status)}</em>
             <p><b>예산</b>{safe_text(project.budget)}</p>
-            <p><b>담당부서</b>{safe_text(project.department)}</p>
+            <p class="project-compact-department"><b>담당부서</b>{safe_text(project.department)}</p>
           </div>
           <div class="project-compact-donut" style="--pct:{project.progress_pct};">
             <span>진행률</span>
@@ -2313,10 +2317,7 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
             <div class="project-board-spacer" aria-hidden="true"></div>
             <div class="project-head-title">
               <div class="project-title-art" aria-label="민생100일 비상조치 추진상황">
-                <span class="title-art-minsaeng">민생</span>
-                <span class="title-art-100">100일</span>
-                <span class="title-art-emergency">비상조치</span>
-                <span class="title-art-status">추진상황</span>
+                <strong>민생100일 비상조치 추진상황</strong>
               </div>
             </div>
             <div class="project-head-actions">
@@ -4483,14 +4484,13 @@ def inject_css() -> None:
         .project-title-art {
           position: relative;
           display: inline-flex;
-          min-height: 76px;
+          min-height: 68px;
           align-items: center;
           justify-content: center;
-          gap: 12px;
           isolation: isolate;
           max-width: 100%;
           overflow: hidden;
-          padding: 0 18px;
+          padding: 0 22px;
           text-align: center;
           white-space: nowrap;
         }
@@ -4502,8 +4502,8 @@ def inject_css() -> None:
           top: 50%;
           left: 50%;
           width: min(820px, 100%);
-          height: 58px;
-          transform: translate(-50%, -50%) skewX(-12deg);
+          height: 54px;
+          transform: translate(-50%, -50%);
           background:
             linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.88) 14%, rgba(255,255,255,0.92) 86%, rgba(255,255,255,0) 100%),
             radial-gradient(circle at 10px 10px, rgba(68, 101, 153, 0.17) 0 1.6px, transparent 2px) 0 0 / 17px 17px;
@@ -4511,63 +4511,16 @@ def inject_css() -> None:
           pointer-events: none;
         }
 
-        .title-art-minsaeng,
-        .title-art-100,
-        .title-art-emergency,
-        .title-art-status {
+        .project-title-art strong {
           position: relative;
           z-index: 1;
           display: inline-block;
+          color: #061f53;
+          font-size: clamp(42px, 3.2vw, 58px);
           font-weight: 950;
           letter-spacing: 0;
-          line-height: 1;
-          transform: skewX(-5deg);
-        }
-
-        .title-art-minsaeng {
-          color: #062461;
-          font-size: clamp(34px, 2.7vw, 48px);
-          text-shadow: 3px 3px 0 rgba(8, 45, 103, 0.08);
-        }
-
-        .title-art-100 {
-          margin: 0 -5px 0 -3px;
-          background: linear-gradient(112deg, #061e5c 0%, #0d3c7c 42%, #14aeb3 100%);
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
-          font-family: var(--font-latin);
-          font-size: clamp(52px, 4.2vw, 78px);
-          font-style: italic;
-          font-weight: 950;
-          letter-spacing: -4px;
-          text-shadow: none;
-        }
-
-        .title-art-emergency {
-          margin-left: 4px;
-          padding: 0.14em 0.34em 0.18em;
-          color: #ef3f43;
-          font-size: clamp(32px, 2.55vw, 46px);
-          text-shadow: 3px 3px 0 rgba(239, 63, 67, 0.09);
-        }
-
-        .title-art-emergency::before {
-          content: "";
-          position: absolute;
-          z-index: -1;
-          inset: -0.02em -0.18em -0.03em -0.08em;
-          transform: skewX(-10deg);
-          border: 3px solid #ef3f43;
-          border-left-width: 5px;
-          background: rgba(255, 255, 255, 0.42);
-          clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%);
-        }
-
-        .title-art-status {
-          color: #062461;
-          font-size: clamp(30px, 2.35vw, 42px);
-          text-shadow: 3px 3px 0 rgba(8, 45, 103, 0.08);
+          line-height: 1.05;
+          text-shadow: 0 4px 12px rgba(8, 45, 103, 0.12);
         }
 
         .project-board-spacer {
@@ -4726,14 +4679,16 @@ def inject_css() -> None:
         }
 
         .project-compact-kpi-values strong {
-          display: block;
+          display: -webkit-box;
           overflow: hidden;
           color: #111827;
           font-size: 15px;
           font-weight: 950;
           line-height: 1.12;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          white-space: normal;
+          word-break: keep-all;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
         }
 
         .project-compact-kpi em {
@@ -4833,15 +4788,21 @@ def inject_css() -> None:
           display: block;
           min-height: 0;
           margin: 3px 0;
-          overflow: hidden;
           color: #26364c;
           font-size: 12px;
           font-weight: 850;
           line-height: 1.3;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          white-space: normal;
           word-break: keep-all;
           -webkit-line-clamp: unset;
+        }
+
+        .project-compact-info p.project-compact-department {
+          display: -webkit-box;
+          overflow: hidden;
+          line-height: 1.22;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
         }
 
         .project-compact-info p b {
@@ -5064,8 +5025,8 @@ def inject_css() -> None:
           font-size: 13px;
           font-weight: 900;
           line-height: 1.28;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          white-space: normal;
+          word-break: keep-all;
         }
 
         .project-hover-feature {
@@ -6400,7 +6361,6 @@ def inject_css() -> None:
 
           .project-title-art {
             min-height: 72px;
-            gap: 6px;
             padding: 0 6px;
             transform: scale(0.9);
             transform-origin: center;
@@ -6411,28 +6371,8 @@ def inject_css() -> None:
             height: 52px;
           }
 
-          .title-art-minsaeng {
-            font-size: 25px;
-          }
-
-          .title-art-100 {
-            font-size: 42px;
-            letter-spacing: -3px;
-          }
-
-          .title-art-emergency {
-            margin-left: 1px;
-            padding: 0.12em 0.24em 0.16em;
-            font-size: 24px;
-          }
-
-          .title-art-emergency::before {
-            border-width: 2px;
-            border-left-width: 3px;
-          }
-
-          .title-art-status {
-            font-size: 24px;
+          .project-title-art strong {
+            font-size: 30px;
           }
 
           .project-head-actions {
