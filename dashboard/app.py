@@ -24,17 +24,9 @@ import streamlit.components.v1 as components
 APP_HOME = Path(os.getenv("MINSAENG100_HOME", Path(__file__).resolve().parents[1]))
 CATALOG_PATH = APP_HOME / "config" / "indicators.json"
 DB_PATH = Path(os.getenv("MINSAENG100_DB", APP_HOME / "data" / "minsaeng100.sqlite"))
-TITLE_MARK_PATH = APP_HOME / "dashboard" / "assets" / "minsaeng100_emergency_title.png"
 MINSAENG_START_DATE = date(2026, 7, 1)
 MINSAENG_TOTAL_DAYS = 100
 KOREA_TZ = ZoneInfo("Asia/Seoul")
-
-
-def image_data_uri(path: Path, mime: str = "image/png") -> str:
-    if not path.exists():
-        return ""
-    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
-    return f"data:{mime};base64,{encoded}"
 
 
 def table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
@@ -2311,12 +2303,6 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         countdown_caption = f"D-Day: {countdown_label[2:]}일 남음"
     else:
         countdown_caption = countdown_label
-    title_mark_uri = image_data_uri(TITLE_MARK_PATH)
-    title_mark_markup = (
-        f'<img src="{title_mark_uri}" alt="민생100일 비상조치" />'
-        if title_mark_uri
-        else '<strong class="title-art-fallback">민생100일 비상조치</strong>'
-    )
     html_cards = "\n".join(render_project_compact_card(project) for project in projects)
     board_class = "project-board compact"
     grid_class = "project-compact-grid"
@@ -2326,13 +2312,11 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
           <div class="project-board-head">
             <div class="project-board-spacer" aria-hidden="true"></div>
             <div class="project-head-title">
-              <div class="project-title-art" role="img" aria-label="민생100일 비상조치 추진상황">
-                <div class="title-art-image">{title_mark_markup}</div>
-                <div class="title-art-sub">
-                  <i aria-hidden="true"></i>
-                  <strong>추진상황</strong>
-                  <i aria-hidden="true"></i>
-                </div>
+              <div class="project-title-art" aria-label="민생100일 비상조치 추진상황">
+                <span class="title-art-minsaeng">민생</span>
+                <span class="title-art-100">100일</span>
+                <span class="title-art-emergency">비상조치</span>
+                <span class="title-art-status">추진상황</span>
               </div>
             </div>
             <div class="project-head-actions">
@@ -4498,13 +4482,15 @@ def inject_css() -> None:
 
         .project-title-art {
           position: relative;
-          display: flex;
-          min-height: 112px;
+          display: inline-flex;
+          min-height: 76px;
           align-items: center;
           justify-content: center;
-          flex-direction: column;
+          gap: 12px;
           isolation: isolate;
-          overflow: visible;
+          max-width: 100%;
+          overflow: hidden;
+          padding: 0 18px;
           text-align: center;
           white-space: nowrap;
         }
@@ -4513,152 +4499,75 @@ def inject_css() -> None:
           content: "";
           position: absolute;
           z-index: -1;
-          top: 8px;
+          top: 50%;
           left: 50%;
-          width: min(780px, 110%);
-          height: 96px;
-          transform: translateX(-50%) skewX(-13deg);
+          width: min(820px, 100%);
+          height: 58px;
+          transform: translate(-50%, -50%) skewX(-12deg);
           background:
-            radial-gradient(circle at 12px 12px, rgba(68, 101, 153, 0.22) 0 2px, transparent 2.6px) 0 0 / 18px 18px,
-            linear-gradient(100deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0));
-          opacity: 0.55;
+            linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.88) 14%, rgba(255,255,255,0.92) 86%, rgba(255,255,255,0) 100%),
+            radial-gradient(circle at 10px 10px, rgba(68, 101, 153, 0.17) 0 1.6px, transparent 2px) 0 0 / 17px 17px;
+          opacity: 0.8;
           pointer-events: none;
         }
 
-        .title-art-image {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 100%;
-        }
-
-        .title-art-image img {
-          display: block;
-          width: auto;
-          max-width: min(360px, 100%);
-          max-height: 86px;
-          object-fit: contain;
-        }
-
-        .title-art-fallback {
-          display: block;
-          color: #062461;
-          font-size: clamp(32px, 2.5vw, 46px);
-          font-weight: 950;
-          line-height: 1.05;
-          word-break: keep-all;
-        }
-
-        .title-art-main {
-          display: inline-flex;
-          align-items: flex-end;
-          justify-content: center;
-          gap: 7px;
-          line-height: 1.02;
-        }
-
         .title-art-minsaeng,
-        .title-art-days,
-        .title-art-emergency {
+        .title-art-100,
+        .title-art-emergency,
+        .title-art-status {
+          position: relative;
+          z-index: 1;
           display: inline-block;
           font-weight: 950;
           letter-spacing: 0;
-          transform: skewX(-7deg);
+          line-height: 1;
+          transform: skewX(-5deg);
         }
 
         .title-art-minsaeng {
           color: #062461;
-          font-size: clamp(32px, 2.35vw, 44px);
-          text-shadow: 4px 4px 0 rgba(8, 45, 103, 0.10);
+          font-size: clamp(34px, 2.7vw, 48px);
+          text-shadow: 3px 3px 0 rgba(8, 45, 103, 0.08);
         }
 
         .title-art-100 {
-          display: inline-block;
-          margin: 0 -3px 0 -2px;
+          margin: 0 -5px 0 -3px;
           background: linear-gradient(112deg, #061e5c 0%, #0d3c7c 42%, #14aeb3 100%);
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;
-          filter: drop-shadow(6px 7px 0 rgba(7, 36, 79, 0.13));
           font-family: var(--font-latin);
-          font-size: clamp(76px, 5.4vw, 104px);
+          font-size: clamp(52px, 4.2vw, 78px);
           font-style: italic;
           font-weight: 950;
-          letter-spacing: -7px;
-          line-height: 1;
-        }
-
-        .title-art-days {
-          color: #0aa7aa;
-          font-size: clamp(34px, 2.55vw, 48px);
-          text-shadow: 4px 4px 0 rgba(10, 167, 170, 0.12);
+          letter-spacing: -4px;
+          text-shadow: none;
         }
 
         .title-art-emergency {
-          position: relative;
-          margin-left: 6px;
-          padding: 0.08em 0.28em 0.1em;
+          margin-left: 4px;
+          padding: 0.14em 0.34em 0.18em;
           color: #ef3f43;
-          font-size: clamp(34px, 2.75vw, 52px);
-          text-shadow: 4px 4px 0 rgba(239, 63, 67, 0.10);
+          font-size: clamp(32px, 2.55vw, 46px);
+          text-shadow: 3px 3px 0 rgba(239, 63, 67, 0.09);
         }
 
         .title-art-emergency::before {
           content: "";
           position: absolute;
           z-index: -1;
-          inset: -0.08em -0.2em -0.08em -0.08em;
-          transform: skewX(-13deg);
-          border: 4px solid #ef3f43;
-          border-left-width: 6px;
-          background: rgba(255, 255, 255, 0.24);
+          inset: -0.02em -0.18em -0.03em -0.08em;
+          transform: skewX(-10deg);
+          border: 3px solid #ef3f43;
+          border-left-width: 5px;
+          background: rgba(255, 255, 255, 0.42);
           clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%);
         }
 
-        .title-art-sub {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 16px;
-          margin-top: 4px;
+        .title-art-status {
           color: #062461;
-          font-size: clamp(30px, 2.45vw, 44px);
-          font-weight: 950;
-          line-height: 1;
-        }
-
-        .title-art-sub strong {
-          font-weight: 950;
-          letter-spacing: 0;
-          text-shadow: 4px 4px 0 rgba(8, 45, 103, 0.10);
-        }
-
-        .title-art-sub i {
-          position: relative;
-          display: inline-block;
-          width: clamp(80px, 8vw, 150px);
-          height: 2px;
-          border-radius: 999px;
-          background: #062461;
-        }
-
-        .title-art-sub i::after {
-          content: "";
-          position: absolute;
-          top: 50%;
-          width: 10px;
-          height: 10px;
-          transform: translateY(-50%);
-          border-radius: 999px;
-          background: #062461;
-        }
-
-        .title-art-sub i:first-child::after {
-          right: -2px;
-        }
-
-        .title-art-sub i:last-child::after {
-          left: -2px;
+          font-size: clamp(30px, 2.35vw, 42px);
+          text-shadow: 3px 3px 0 rgba(8, 45, 103, 0.08);
         }
 
         .project-board-spacer {
@@ -6490,55 +6399,40 @@ def inject_css() -> None:
           }
 
           .project-title-art {
-            min-height: 116px;
-            transform: scale(0.86);
+            min-height: 72px;
+            gap: 6px;
+            padding: 0 6px;
+            transform: scale(0.9);
             transform-origin: center;
           }
 
           .project-title-art::before {
-            width: 112%;
-            height: 96px;
-          }
-
-          .title-art-image img {
-            max-width: 230px;
-            max-height: 72px;
-          }
-
-          .title-art-main {
-            gap: 5px;
+            width: 104%;
+            height: 52px;
           }
 
           .title-art-minsaeng {
-            font-size: 28px;
+            font-size: 25px;
           }
 
           .title-art-100 {
-            font-size: 72px;
-            letter-spacing: -5px;
-          }
-
-          .title-art-days {
-            font-size: 34px;
+            font-size: 42px;
+            letter-spacing: -3px;
           }
 
           .title-art-emergency {
-            margin-left: 2px;
-            font-size: 30px;
+            margin-left: 1px;
+            padding: 0.12em 0.24em 0.16em;
+            font-size: 24px;
           }
 
           .title-art-emergency::before {
-            border-width: 3px;
+            border-width: 2px;
+            border-left-width: 3px;
           }
 
-          .title-art-sub {
-            gap: 12px;
-            margin-top: 5px;
-            font-size: 30px;
-          }
-
-          .title-art-sub i {
-            width: 54px;
+          .title-art-status {
+            font-size: 24px;
           }
 
           .project-head-actions {
