@@ -2471,38 +2471,75 @@ def display_metric_rows_html(project: EmergencyProject) -> str:
     if not metrics:
         return """
           <div class="display-metric-row">
-            <div>
-              <strong>정량 수혜지표</strong>
-              <span>목표 미설정</span>
+            <strong>정량 수혜지표</strong>
+            <div class="display-metric-values">
+              <p><span>목표</span><b>목표 미설정</b></p>
+              <p><span>실적</span><b class="is-waiting">입력 대기</b></p>
             </div>
-            <b>0</b>
+            <i><em></em></i>
           </div>
         """
     rows: list[str] = []
     for metric in metrics:
         current = metric_current(project, metric)
         current_text = display_actual_text(current, metric.unit)
-        unit_markup = f'<em>단위: {safe_text(metric.unit)}</em>' if metric.unit else ""
+        waiting_class = " is-waiting" if current is None else ""
+        pct = metric_pct(current, metric.target_value)
+        pct_text = "달성률 산정 대기" if pct is None else f"달성률 {pct:.1f}%"
+        bar_pct = 0.0 if pct is None else pct
         rows.append(
             f"""
-            <div class="display-metric-row">
-              <div>
-                <strong>{safe_text(metric.label)}</strong>
-                {unit_markup}
-                <span>목표 {safe_text(metric.target_text)}</span>
+            <div class="display-metric-row" style="--metric-pct:{bar_pct:.3f};">
+              <strong>{safe_text(metric.label)}</strong>
+              <div class="display-metric-values">
+                <p><span>목표</span><b>{safe_text(metric.target_text)}</b></p>
+                <p><span>실적</span><b class="{waiting_class.strip()}">{safe_text(current_text)}</b></p>
               </div>
-              <b>{safe_text(current_text)}</b>
+              <em>{safe_text(pct_text)}</em>
+              <i><b></b></i>
             </div>
             """
         )
     return "\n".join(rows)
 
 
+def display_stage_points_html(project: EmergencyProject) -> str:
+    stages = project_stages(project.project_id)
+    if not stages:
+        return ""
+    try:
+        current_index = stages.index(project.status)
+    except ValueError:
+        current_index = -1
+    points: list[str] = []
+    for idx, label in enumerate(stages):
+        classes = ["display-stage-point"]
+        if current_index >= 0 and idx < current_index:
+            classes.append("is-done")
+        if current_index >= 0 and idx == current_index:
+            classes.append("is-current")
+        points.append(f'<span class="{" ".join(classes)}">{safe_text(label)}</span>')
+    return f"""
+      <div class="display-stage-track" style="--pct:{project.progress_pct};">
+        <div class="display-stage-line"><span></span></div>
+        <div class="display-stage-labels" style="grid-template-columns: repeat({len(stages)}, minmax(0, 1fr));">
+          {"".join(points)}
+        </div>
+      </div>
+    """
+
+
 def display_project_card(project: EmergencyProject) -> str:
     title = DISPLAY_PROJECT_TITLES.get(project.project_id, project.title)
     progress = max(0.0, min(float(project.progress_pct), 100.0))
+    field_group = PROJECT_FIELD_GROUPS.get(project.project_id, project.field)
+    field_class = PROJECT_FIELD_CLASSES.get(field_group, "field-default")
     return f"""
-      <article class="display-project-card">
+      <article class="display-project-card {safe_text(field_class)}">
+        <div class="display-card-field">
+          <span aria-hidden="true"></span>
+          <b>{safe_text(field_group)}</b>
+        </div>
         <h3>{safe_text(title)}</h3>
         <div class="display-card-gauge" style="--pct:{progress:.2f}; --arc-deg:{max(progress, 12.0) * 1.8:.2f}deg;">
           <div class="display-card-gauge-value">
@@ -2510,10 +2547,14 @@ def display_project_card(project: EmergencyProject) -> str:
             <strong>{progress:.1f}</strong>
           </div>
         </div>
-        <div class="display-card-divider"></div>
         <div class="display-card-metrics">
           {display_metric_rows_html(project)}
         </div>
+        <div class="display-card-meta">
+          <p><span>예산</span><b>{safe_text(project.budget)}</b></p>
+          <p><span>담당부서</span><b>{safe_text(project.department)}</b></p>
+        </div>
+        {display_stage_points_html(project)}
       </article>
     """
 
@@ -6941,6 +6982,392 @@ def inject_css() -> None:
           line-height: 1;
           white-space: nowrap;
           text-align: right;
+        }
+
+        .display-board-page {
+          min-width: 1360px;
+          min-height: 100vh;
+          overflow: hidden;
+          background: #e9f3ff;
+        }
+
+        .display-hero {
+          min-height: 178px;
+          grid-template-columns: minmax(560px, 1fr) minmax(360px, 500px) 230px;
+          gap: 22px;
+          padding: 22px 36px 0;
+          align-items: end;
+        }
+
+        .display-hero-copy {
+          gap: 12px;
+          justify-content: center;
+        }
+
+        .display-hero-copy h1 {
+          font-size: clamp(42px, 4.2vw, 70px);
+          line-height: 1;
+          letter-spacing: -0.045em;
+        }
+
+        .display-dday-card {
+          width: 210px;
+          height: 74px;
+          border-radius: 10px 10px 0 0;
+          font-size: 46px;
+        }
+
+        .display-hero-progress {
+          min-height: 150px;
+          grid-template-columns: 120px minmax(0, 1fr);
+          gap: 10px;
+          padding-bottom: 16px;
+        }
+
+        .display-overall-label {
+          font-size: 16px;
+        }
+
+        .display-overall-gauge {
+          width: 310px;
+          height: 155px;
+          min-width: 310px;
+          min-height: 155px;
+        }
+
+        .display-overall-gauge strong {
+          bottom: 16px;
+          font-size: 52px;
+        }
+
+        .display-hero-brand {
+          margin-top: 18px;
+        }
+
+        .display-hero-brand span {
+          font-size: 16px;
+        }
+
+        .display-hero-brand strong {
+          font-size: 23px;
+        }
+
+        .display-card-zone {
+          padding: 24px 36px 28px;
+          background:
+            linear-gradient(180deg, #dcecff 0%, #eef6ff 70%, #e2f0ff 100%);
+        }
+
+        .display-project-grid {
+          gap: 14px 24px;
+        }
+
+        .display-project-card {
+          --accent: #0aaa9f;
+          --accent-2: #237cff;
+          min-height: 318px;
+          height: 318px;
+          display: flex;
+          flex-direction: column;
+          padding: 12px 15px 10px;
+          border-radius: 9px;
+          box-shadow: 0 16px 28px rgba(21, 72, 129, 0.11);
+          overflow: hidden;
+        }
+
+        .display-project-card.field-smallbiz {
+          --accent: #00aaa0;
+          --accent-2: #19c8ba;
+        }
+
+        .display-project-card.field-burden {
+          --accent: #8128ff;
+          --accent-2: #b13cff;
+        }
+
+        .display-project-card.field-safety {
+          --accent: #145cff;
+          --accent-2: #2388ff;
+        }
+
+        .display-card-field {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          min-height: 15px;
+          margin-bottom: 2px;
+          color: var(--accent);
+          font-size: 10px;
+          font-weight: 950;
+          line-height: 1;
+          white-space: nowrap;
+        }
+
+        .display-card-field span {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: color-mix(in srgb, var(--accent) 14%, #fff);
+          border: 2px solid var(--accent);
+          box-sizing: border-box;
+        }
+
+        .display-project-card h3 {
+          min-height: 42px;
+          max-height: 42px;
+          margin: 0 0 2px;
+          font-size: clamp(17px, 1.12vw, 21px);
+          line-height: 1.16;
+          letter-spacing: -0.045em;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .display-card-gauge {
+          width: 116px;
+          height: 58px;
+          margin: 0 auto 1px;
+        }
+
+        .display-card-gauge::before {
+          background:
+            conic-gradient(
+              from 270deg at 50% 100%,
+              var(--accent) 0deg,
+              var(--accent-2) var(--arc-deg),
+              #e9f1fc var(--arc-deg),
+              #e9f1fc 180deg,
+              transparent 180deg
+            );
+        }
+
+        .display-card-gauge::after {
+          left: 18px;
+          right: 18px;
+          top: 18px;
+        }
+
+        .display-card-gauge-value span {
+          color: #8c97aa;
+          font-size: 9px;
+          font-weight: 900;
+        }
+
+        .display-card-gauge-value strong {
+          color: #101346;
+          font-size: 29px;
+          line-height: 0.96;
+        }
+
+        .display-card-metrics {
+          display: grid;
+          gap: 3px;
+          margin-top: 1px;
+        }
+
+        .display-metric-row {
+          display: block;
+          min-height: 38px;
+          padding: 3px 5px 4px;
+          border-radius: 7px;
+          background: #f8fbff;
+          border: 1px solid #d8e8f6;
+          box-shadow: 0 4px 12px rgba(18, 80, 145, 0.04);
+        }
+
+        .display-metric-row > strong {
+          display: block;
+          margin-bottom: 1px;
+          color: var(--accent);
+          font-size: 8.8px;
+          font-weight: 950;
+          line-height: 1.08;
+          letter-spacing: -0.02em;
+          word-break: keep-all;
+        }
+
+        .display-metric-values {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 3px;
+        }
+
+        .display-metric-values p {
+          margin: 0;
+          min-width: 0;
+          padding: 2px 5px;
+          border-radius: 5px;
+          background: #eaf3ff;
+        }
+
+        .display-metric-values p:nth-child(2) {
+          background: #e6fbf3;
+        }
+
+        .display-metric-values span,
+        .display-metric-values b {
+          display: block;
+          text-align: left;
+        }
+
+        .display-metric-values span {
+          color: #0b5eb2;
+          font-size: 8px;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .display-metric-values b {
+          margin-top: 1px;
+          color: #050d1b;
+          font-size: 11px;
+          font-weight: 950;
+          line-height: 1.05;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .display-metric-values b.is-waiting {
+          color: #1b2540;
+          font-size: 9.5px;
+          letter-spacing: -0.03em;
+        }
+
+        .display-metric-row > em {
+          display: block;
+          width: fit-content;
+          max-width: 100%;
+          margin: 2px auto 1px;
+          padding: 1px 8px;
+          border-radius: 999px;
+          background: #0b3d81;
+          color: #fff;
+          font-size: 8px;
+          font-style: normal;
+          font-weight: 950;
+          line-height: 1;
+          white-space: nowrap;
+        }
+
+        .display-metric-row > i {
+          display: block;
+          height: 5px;
+          border-radius: 999px;
+          background: #d7e4f2;
+          overflow: hidden;
+          box-shadow: 0 0 0 1px rgba(19, 68, 120, 0.08) inset;
+        }
+
+        .display-metric-row > i > b {
+          display: block;
+          width: max(calc(var(--metric-pct) * 1%), 0%);
+          height: 100%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, var(--accent), var(--accent-2));
+          box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 44%, transparent);
+        }
+
+        .display-card-meta {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1px;
+          margin-top: 3px;
+          padding: 4px 6px;
+          border-radius: 8px;
+          background: #f0f6fc;
+        }
+
+        .display-card-meta p {
+          display: grid;
+          grid-template-columns: 38px minmax(0, 1fr);
+          gap: 4px;
+          margin: 0;
+          align-items: start;
+          font-size: 9.4px;
+          line-height: 1.1;
+        }
+
+        .display-card-meta span {
+          color: #6a7890;
+          font-weight: 900;
+        }
+
+        .display-card-meta b {
+          color: #07142b;
+          font-weight: 950;
+          white-space: pre-line;
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+        }
+
+        .display-stage-track {
+          position: relative;
+          margin-top: auto;
+          padding-top: 7px;
+        }
+
+        .display-stage-line {
+          position: relative;
+          height: 4px;
+          border-radius: 999px;
+          background: #d7e4f2;
+          overflow: hidden;
+        }
+
+        .display-stage-line span {
+          display: block;
+          width: calc(var(--pct) * 1%);
+          height: 100%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        }
+
+        .display-stage-labels {
+          position: relative;
+          display: grid;
+          gap: 2px;
+          margin-top: 2px;
+        }
+
+        .display-stage-point {
+          position: relative;
+          display: block;
+          color: #43536b;
+          font-size: 7.8px;
+          font-weight: 900;
+          line-height: 1.12;
+          text-align: center;
+          word-break: keep-all;
+        }
+
+        .display-stage-point::before {
+          content: "";
+          position: absolute;
+          top: -9px;
+          left: 50%;
+          width: 6px;
+          height: 6px;
+          transform: translateX(-50%);
+          border-radius: 50%;
+          background: #fff;
+          border: 2px solid #b8cbe0;
+          box-sizing: border-box;
+        }
+
+        .display-stage-point.is-done,
+        .display-stage-point.is-current {
+          color: #0b5eb2;
+        }
+
+        .display-stage-point.is-done::before,
+        .display-stage-point.is-current::before {
+          border-color: var(--accent);
+          background: var(--accent);
         }
 
         div[data-testid="stDataFrame"] {
