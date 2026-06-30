@@ -6596,12 +6596,12 @@ def inject_css() -> None:
 
         .display-hero {
           position: relative;
-          min-height: 360px;
+          min-height: 244px;
           display: grid;
-          grid-template-columns: minmax(700px, 1fr) minmax(500px, 640px) 280px;
+          grid-template-columns: minmax(700px, 1fr) minmax(420px, 540px) 250px;
           align-items: end;
-          gap: 34px;
-          padding: 52px 42px 0;
+          gap: 24px;
+          padding: 30px 34px 0;
           box-sizing: border-box;
           color: #fff;
           background:
@@ -6615,9 +6615,9 @@ def inject_css() -> None:
           content: "";
           position: absolute;
           right: 17%;
-          top: -120px;
-          width: 520px;
-          height: 520px;
+          top: -150px;
+          width: 450px;
+          height: 450px;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.08);
           filter: blur(2px);
@@ -6645,14 +6645,14 @@ def inject_css() -> None:
           display: flex;
           flex-direction: column;
           justify-content: center;
-          gap: 42px;
-          padding-bottom: 22px;
+          gap: 24px;
+          padding-bottom: 0;
         }
 
         .display-hero-copy h1 {
           margin: 0;
           color: #fff;
-          font-size: clamp(50px, 4.9vw, 78px);
+          font-size: clamp(42px, 4.1vw, 64px);
           font-weight: 950;
           line-height: 1.05;
           letter-spacing: -0.02em;
@@ -6662,15 +6662,15 @@ def inject_css() -> None:
         }
 
         .display-dday-card {
-          width: 300px;
-          height: 120px;
+          width: 230px;
+          height: 84px;
           display: flex;
           align-items: center;
           justify-content: center;
           border-radius: 12px 12px 0 0;
           background: #edf4ff;
           color: #111b39;
-          font-size: 62px;
+          font-size: 48px;
           font-weight: 950;
           line-height: 1;
           letter-spacing: -0.02em;
@@ -6678,17 +6678,17 @@ def inject_css() -> None:
         }
 
         .display-hero-progress {
-          min-height: 270px;
+          min-height: 178px;
           display: grid;
-          grid-template-columns: 150px minmax(0, 1fr);
-          align-items: center;
-          gap: 16px;
-          padding-bottom: 22px;
+          grid-template-columns: 132px minmax(0, 1fr);
+          align-items: end;
+          gap: 12px;
+          padding-bottom: 18px;
         }
 
         .display-overall-label {
           color: #fff;
-          font-size: 22px;
+          font-size: 19px;
           font-weight: 900;
           text-align: right;
           white-space: nowrap;
@@ -6697,10 +6697,10 @@ def inject_css() -> None:
 
         .display-overall-gauge {
           position: relative;
-          width: min(500px, 32vw);
-          height: min(250px, 16vw);
-          min-width: 420px;
-          min-height: 210px;
+          width: min(390px, 25vw);
+          height: min(195px, 12.5vw);
+          min-width: 330px;
+          min-height: 165px;
           overflow: hidden;
         }
 
@@ -6749,10 +6749,10 @@ def inject_css() -> None:
         .display-overall-gauge strong {
           position: absolute;
           left: 50%;
-          bottom: 20px;
+          bottom: 16px;
           transform: translateX(-50%);
           color: #fff;
-          font-size: 76px;
+          font-size: 62px;
           font-weight: 950;
           line-height: 1;
           letter-spacing: -0.02em;
@@ -6763,7 +6763,7 @@ def inject_css() -> None:
         .display-hero-brand {
           align-self: start;
           justify-self: end;
-          margin-top: 16px;
+          margin-top: 6px;
           text-align: right;
           color: #fff;
           text-shadow: 0 3px 14px rgba(0, 0, 0, 0.22);
@@ -6776,19 +6776,19 @@ def inject_css() -> None:
         }
 
         .display-hero-brand span {
-          font-size: 20px;
+          font-size: 17px;
           font-weight: 900;
         }
 
         .display-hero-brand strong {
           margin-top: 3px;
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 950;
           line-height: 1.1;
         }
 
         .display-card-zone {
-          padding: 36px 42px 46px;
+          padding: 20px 34px 22px;
           background:
             linear-gradient(90deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0)),
             #eaf4ff;
@@ -6797,13 +6797,13 @@ def inject_css() -> None:
         .display-project-grid {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 28px 30px;
+          gap: 18px 22px;
           width: 100%;
         }
 
         .display-project-card {
-          min-height: 420px;
-          padding: 30px 30px 28px;
+          min-height: 348px;
+          padding: 24px 26px 22px;
           border-radius: 12px;
           background: #fff;
           box-shadow: 0 18px 34px rgba(26, 69, 121, 0.13);
@@ -6811,10 +6811,10 @@ def inject_css() -> None:
         }
 
         .display-project-card h3 {
-          min-height: 78px;
-          margin: 0 0 18px;
+          min-height: 68px;
+          margin: 0 0 10px;
           color: #050d1b;
-          font-size: clamp(24px, 1.7vw, 34px);
+          font-size: clamp(22px, 1.45vw, 29px);
           font-weight: 950;
           line-height: 1.23;
           letter-spacing: -0.02em;
@@ -6823,9 +6823,9 @@ def inject_css() -> None:
 
         .display-card-gauge {
           position: relative;
-          width: 220px;
-          height: 112px;
-          margin: 0 auto 10px;
+          width: 176px;
+          height: 88px;
+          margin: 0 auto 6px;
           overflow: hidden;
         }
 
@@ -6850,9 +6850,9 @@ def inject_css() -> None:
         }
 
         .display-card-gauge::after {
-          left: 32px;
-          right: 32px;
-          top: 32px;
+          left: 26px;
+          right: 26px;
+          top: 26px;
           bottom: -1px;
           border-radius: 168px 168px 0 0;
           background: #fff;
@@ -6872,14 +6872,14 @@ def inject_css() -> None:
 
         .display-card-gauge-value span {
           color: #8a95a5;
-          font-size: 15px;
+          font-size: 13px;
           font-weight: 850;
           white-space: nowrap;
         }
 
         .display-card-gauge-value strong {
           color: #2478f2;
-          font-size: 50px;
+          font-size: 40px;
           font-weight: 950;
           line-height: 0.94;
           letter-spacing: -0.02em;
@@ -6887,19 +6887,19 @@ def inject_css() -> None:
 
         .display-card-divider {
           height: 2px;
-          margin: 8px 0 14px;
+          margin: 6px 0 10px;
           background: #e7eef7;
         }
 
         .display-card-metrics {
           display: grid;
-          gap: 12px;
+          gap: 8px;
         }
 
         .display-metric-row {
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
-          gap: 12px;
+          gap: 10px;
           align-items: end;
         }
 
@@ -6911,24 +6911,24 @@ def inject_css() -> None:
 
         .display-metric-row strong {
           color: #050d1b;
-          font-size: 15px;
+          font-size: 13px;
           font-weight: 950;
           line-height: 1.26;
           word-break: keep-all;
         }
 
         .display-metric-row em {
-          margin-top: 2px;
+          margin-top: 1px;
           color: #9aa5b5;
-          font-size: 10px;
+          font-size: 9px;
           font-style: normal;
           font-weight: 800;
         }
 
         .display-metric-row span {
-          margin-top: 3px;
+          margin-top: 2px;
           color: #111827;
-          font-size: 18px;
+          font-size: 15px;
           font-weight: 850;
           line-height: 1.15;
           word-break: keep-all;
@@ -6936,7 +6936,7 @@ def inject_css() -> None:
 
         .display-metric-row b {
           color: #2478f2;
-          font-size: 26px;
+          font-size: 22px;
           font-weight: 950;
           line-height: 1;
           white-space: nowrap;
