@@ -378,6 +378,13 @@ PROJECT_FIELD_GROUPS = {
 }
 
 
+PROJECT_FIELD_CLASSES = {
+    "소상공인 경영개선 지원": "field-smallbiz",
+    "시민부담 경감": "field-burden",
+    "민생안전망 구축": "field-safety",
+}
+
+
 PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
     "P001": (
         ProjectMetric("loan_amount", "대출실행금액", "만원", 120_000_000, "1조 2,000억원", True),
@@ -2329,11 +2336,12 @@ def render_project_compact_card(project: EmergencyProject) -> str:
     hover_detail = compact_hover_detail_html(project)
     number_mark = PROJECT_NUMBER_MARKS.get(project.number, str(project.number))
     field_group = PROJECT_FIELD_GROUPS.get(project.project_id, project.field)
+    field_class = PROJECT_FIELD_CLASSES.get(field_group, "field-default")
     title_markup = safe_text(project.title)
     if project.project_id == "P002":
         title_markup = "소상공인 에너지바우처 지급<br><span class=\"project-title-sub\">공공요금·지방세 부담 완화</span>"
     return f"""
-      <article class="project-compact-card project-{safe_text(project.project_id)}" tabindex="0" aria-label="{safe_text(project.title)} 상세 보기">
+      <article class="project-compact-card project-{safe_text(project.project_id)} {safe_text(field_class)}" tabindex="0" aria-label="{safe_text(project.title)} 상세 보기">
         <h3><span>{safe_text(number_mark)}</span><strong>{title_markup}</strong></h3>
         <div class="project-compact-main">
           <div class="project-compact-info">
@@ -4778,12 +4786,20 @@ def inject_css() -> None:
         }
 
         .project-compact-kpi-name {
-          display: block;
+          display: inline-flex;
+          min-width: min(100%, 136px);
+          align-items: center;
+          justify-content: center;
           overflow: hidden;
-          color: #0f376f;
-          font-size: 11.5px;
+          padding: 4px 9px;
+          border: 1px solid rgba(31, 93, 168, 0.26);
+          border-radius: 999px;
+          background: linear-gradient(135deg, #0b4a96 0%, #167bd1 100%);
+          color: #ffffff;
+          font-size: 12px;
           font-weight: 950;
-          line-height: 1.08;
+          line-height: 1;
+          box-shadow: 0 5px 12px rgba(15, 76, 154, 0.18);
           text-overflow: ellipsis;
           white-space: nowrap;
         }
@@ -4851,21 +4867,29 @@ def inject_css() -> None:
 
         .project-compact-kpi i {
           display: block;
+          position: relative;
           height: 8px;
           margin-top: 4px;
           overflow: hidden;
+          border: 1px solid rgba(15, 55, 111, 0.16);
           border-radius: 999px;
-          background: #d5e3f0;
-          box-shadow: inset 0 1px 2px rgba(15, 35, 70, 0.16);
+          background:
+            linear-gradient(90deg, rgba(239, 68, 68, 0.22) 0%, rgba(245, 158, 11, 0.24) 45%, rgba(16, 185, 129, 0.28) 100%),
+            #d5e3f0;
+          box-shadow:
+            inset 0 1px 2px rgba(15, 35, 70, 0.2),
+            0 3px 7px rgba(31, 128, 255, 0.1);
         }
 
         .project-compact-kpi i b {
           display: block;
-          width: calc(var(--metric-pct) * 1%);
+          width: max(7px, calc(var(--metric-pct) * 1%));
           height: 100%;
           border-radius: inherit;
-          background: linear-gradient(90deg, #16c8bb 0%, #1f80ff 72%, #6246ea 100%);
-          box-shadow: 0 0 12px rgba(31, 128, 255, 0.38);
+          background: linear-gradient(90deg, #0056d6 0%, #00b8ff 48%, #00d084 100%);
+          box-shadow:
+            0 0 12px rgba(31, 128, 255, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
         }
 
         .project-compact-main {
@@ -4929,6 +4953,21 @@ def inject_css() -> None:
           line-height: 1.2;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+
+        .project-compact-card.field-smallbiz .project-compact-info em {
+          background: linear-gradient(135deg, #009c96 0%, #00b8a9 100%);
+          box-shadow: 0 5px 10px rgba(0, 156, 150, 0.18);
+        }
+
+        .project-compact-card.field-burden .project-compact-info em {
+          background: linear-gradient(135deg, #e85d34 0%, #ff9f1c 100%);
+          box-shadow: 0 5px 10px rgba(232, 93, 52, 0.18);
+        }
+
+        .project-compact-card.field-safety .project-compact-info em {
+          background: linear-gradient(135deg, #1957c2 0%, #5b6ee1 100%);
+          box-shadow: 0 5px 10px rgba(25, 87, 194, 0.18);
         }
 
         .project-compact-info p {
