@@ -4661,28 +4661,32 @@ def inject_css() -> None:
           gap: 7px;
           margin: 0 0 8px;
           padding: 10px 10px 9px;
-          border: 1px solid #e3edf5;
+          border: 1px solid #c9dcf0;
           border-radius: 13px;
-          background: #f7fbff;
+          background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(238, 247, 255, 0.96) 100%);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 18px rgba(34, 75, 130, 0.08);
           text-align: center;
         }
 
         .project-compact-kpi-item {
           min-width: 0;
-          padding: 0 0 7px;
-          border-bottom: 1px solid #e6eef7;
+          padding: 7px 8px 8px;
+          border: 1px solid rgba(32, 114, 184, 0.11);
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.72);
+          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
         }
 
         .project-compact-kpi-item:last-child {
-          padding-bottom: 0;
-          border-bottom: 0;
+          padding-bottom: 8px;
         }
 
         .project-compact-kpi-name {
           display: block;
           overflow: hidden;
-          color: #4d5d75;
-          font-size: 12.5px;
+          color: #0f376f;
+          font-size: 13px;
           font-weight: 950;
           line-height: 1.2;
           text-overflow: ellipsis;
@@ -4700,15 +4704,27 @@ def inject_css() -> None:
           margin: 0;
           min-width: 0;
           overflow: hidden;
+          padding: 6px 6px 7px;
+          border-radius: 8px;
+          background: #edf5ff;
+          text-align: left;
+        }
+
+        .project-compact-kpi-values p:last-child {
+          background: #e9fbf6;
         }
 
         .project-compact-kpi-values b {
           display: block;
           margin-bottom: 3px;
-          color: #6b7788;
+          color: #2d5e9c;
           font-size: 13.5px;
           font-weight: 950;
           line-height: 1;
+        }
+
+        .project-compact-kpi-values p:last-child b {
+          color: #087968;
         }
 
         .project-compact-kpi-values strong {
@@ -4727,23 +4743,25 @@ def inject_css() -> None:
         .project-compact-kpi em {
           display: inline-flex;
           margin-top: 5px;
-          padding: 3px 6px;
-          border-radius: 3px;
-          background: #f8caca;
-          color: #c2413d;
-          font-size: 10.5px;
+          padding: 4px 8px;
+          border-radius: 999px;
+          background: #173b75;
+          color: #ffffff;
+          font-size: 11px;
           font-style: normal;
           font-weight: 950;
           line-height: 1;
+          box-shadow: 0 5px 10px rgba(23, 59, 117, 0.18);
         }
 
         .project-compact-kpi i {
           display: block;
-          height: 9px;
+          height: 12px;
           margin-top: 6px;
           overflow: hidden;
-          border-radius: 2px;
-          background: #d6d9ef;
+          border-radius: 999px;
+          background: #d5e3f0;
+          box-shadow: inset 0 1px 2px rgba(15, 35, 70, 0.16);
         }
 
         .project-compact-kpi i b {
@@ -4751,7 +4769,8 @@ def inject_css() -> None:
           width: calc(var(--metric-pct) * 1%);
           height: 100%;
           border-radius: inherit;
-          background: #7a73ec;
+          background: linear-gradient(90deg, #16c8bb 0%, #1f80ff 72%, #6246ea 100%);
+          box-shadow: 0 0 12px rgba(31, 128, 255, 0.38);
         }
 
         .project-compact-main {
