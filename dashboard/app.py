@@ -385,6 +385,27 @@ PROJECT_FIELD_CLASSES = {
 }
 
 
+DISPLAY_PROJECT_TITLES = {
+    "P001": "소상공인 1% 저리대출",
+    "P002": "소상공인 에너지바우처 지급",
+    "P003": "영세 화물차주·택배종사자 특별지원",
+    "P004": "동백전 카드수수료 부담완화",
+    "P005": "동백전 캐시백 15% 한시상향",
+    "P006": "소비활력 쿠폰지급",
+    "P007": "만원 임대료 1,000개 빈점포 활용 민생상권 회복",
+    "P008": "공공근로형 민생지킴이 운영, 공공일자리 확대",
+    "P009": "민생재기 원스톱 100일 프로젝트",
+    "P010": "특별사법경찰제도 조속 도입",
+}
+
+
+DISPLAY_METRIC_LIMITS = {
+    "P003": 3,
+    "P006": 3,
+    "P010": 2,
+}
+
+
 PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
     "P001": (
         ProjectMetric("loan_amount", "대출실행금액", "만원", 120_000_000, "1조 2,000억원", True),
@@ -1912,7 +1933,7 @@ def active_view() -> str:
     raw_view = st.query_params.get("view", "economy")
     if isinstance(raw_view, list):
         raw_view = raw_view[0] if raw_view else "economy"
-    return raw_view if raw_view in {"economy", "check", "admin"} else "economy"
+    return raw_view if raw_view in {"economy", "check", "check_display", "admin"} else "economy"
 
 
 def active_project_layout() -> str:
@@ -2432,6 +2453,108 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
           </div>
         </section>
         """
+    )
+
+
+def display_actual_text(value: float | None, unit: str) -> str:
+    if value is None:
+        if unit == "%":
+            return "0%"
+        return "0"
+    return format_metric_value(value, unit, compact=True)
+
+
+def display_metric_rows_html(project: EmergencyProject) -> str:
+    metrics = list(project_metrics(project.project_id))[
+        : DISPLAY_METRIC_LIMITS.get(project.project_id, 2)
+    ]
+    if not metrics:
+        return """
+          <div class="display-metric-row">
+            <div>
+              <strong>정량 수혜지표</strong>
+              <span>목표 미설정</span>
+            </div>
+            <b>0</b>
+          </div>
+        """
+    rows: list[str] = []
+    for metric in metrics:
+        current = metric_current(project, metric)
+        current_text = display_actual_text(current, metric.unit)
+        unit_markup = f'<em>단위: {safe_text(metric.unit)}</em>' if metric.unit else ""
+        rows.append(
+            f"""
+            <div class="display-metric-row">
+              <div>
+                <strong>{safe_text(metric.label)}</strong>
+                {unit_markup}
+                <span>목표 {safe_text(metric.target_text)}</span>
+              </div>
+              <b>{safe_text(current_text)}</b>
+            </div>
+            """
+        )
+    return "\n".join(rows)
+
+
+def display_project_card(project: EmergencyProject) -> str:
+    title = DISPLAY_PROJECT_TITLES.get(project.project_id, project.title)
+    progress = max(0.0, min(float(project.progress_pct), 100.0))
+    return f"""
+      <article class="display-project-card">
+        <h3>{safe_text(title)}</h3>
+        <div class="display-card-gauge" style="--pct:{progress:.2f}; --arc-deg:{max(progress, 12.0) * 1.8:.2f}deg;">
+          <div class="display-card-gauge-value">
+            <span>달성률(%)</span>
+            <strong>{progress:.1f}</strong>
+          </div>
+        </div>
+        <div class="display-card-divider"></div>
+        <div class="display-card-metrics">
+          {display_metric_rows_html(project)}
+        </div>
+      </article>
+    """
+
+
+def render_project_display_board(projects: list[EmergencyProject]) -> None:
+    updates = load_project_updates()
+    projects = apply_project_updates(projects, updates)
+    avg_progress = (
+        round(sum(project.progress_pct for project in projects) / len(projects), 1)
+        if projects
+        else 0.0
+    )
+    countdown_label, _countdown_status = minsaeng_countdown()
+    display_countdown = countdown_label if countdown_label.startswith("D-") else "D-0"
+    cards_html = "\n".join(display_project_card(project) for project in projects)
+    st.html(
+        f"""
+        <section class="display-board-page notranslate" translate="no" lang="ko">
+          <div class="display-hero">
+            <div class="display-hero-copy">
+              <h1>민생100일 비상조치 추진상황판</h1>
+              <div class="display-dday-card">{safe_text(display_countdown)}</div>
+            </div>
+            <div class="display-hero-progress">
+              <div class="display-overall-label">전체 진행률(%)</div>
+              <div class="display-overall-gauge" style="--pct:{avg_progress:.2f}; --arc-deg:{max(avg_progress, 12.0) * 1.8:.2f}deg;">
+                <strong>{avg_progress:.1f}</strong>
+              </div>
+            </div>
+            <div class="display-hero-brand">
+              <span>미래 대전환의 중심</span>
+              <strong>해양수도 부산</strong>
+            </div>
+          </div>
+          <div class="display-card-zone">
+            <div class="display-project-grid">
+              {cards_html}
+            </div>
+          </div>
+        </section>
+        """,
     )
 
 
@@ -6461,6 +6584,365 @@ def inject_css() -> None:
           box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.64) inset;
         }
 
+        .display-board-page {
+          width: 100%;
+          min-width: 1500px;
+          margin: 0;
+          background: linear-gradient(180deg, #dcebff 0%, #eff7ff 42%, #e8f4ff 100%);
+          color: #07142b;
+          font-family: var(--font-kr);
+          overflow-x: auto;
+        }
+
+        .display-hero {
+          position: relative;
+          min-height: 360px;
+          display: grid;
+          grid-template-columns: minmax(700px, 1fr) minmax(500px, 640px) 280px;
+          align-items: end;
+          gap: 34px;
+          padding: 52px 42px 0;
+          box-sizing: border-box;
+          color: #fff;
+          background:
+            radial-gradient(circle at 78% 18%, rgba(0, 212, 255, 0.28), transparent 30%),
+            radial-gradient(circle at 24% 80%, rgba(0, 101, 235, 0.42), transparent 35%),
+            linear-gradient(120deg, #087fc3 0%, #0063db 50%, #0600d7 100%);
+          overflow: hidden;
+        }
+
+        .display-hero::before {
+          content: "";
+          position: absolute;
+          right: 17%;
+          top: -120px;
+          width: 520px;
+          height: 520px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.08);
+          filter: blur(2px);
+        }
+
+        .display-hero::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.55);
+        }
+
+        .display-hero-copy,
+        .display-hero-progress,
+        .display-hero-brand {
+          position: relative;
+          z-index: 1;
+        }
+
+        .display-hero-copy {
+          align-self: stretch;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 42px;
+          padding-bottom: 22px;
+        }
+
+        .display-hero-copy h1 {
+          margin: 0;
+          color: #fff;
+          font-size: clamp(50px, 4.9vw, 78px);
+          font-weight: 950;
+          line-height: 1.05;
+          letter-spacing: -0.02em;
+          word-break: keep-all;
+          white-space: nowrap;
+          text-shadow: 0 6px 20px rgba(0, 0, 0, 0.20);
+        }
+
+        .display-dday-card {
+          width: 300px;
+          height: 120px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 12px 12px 0 0;
+          background: #edf4ff;
+          color: #111b39;
+          font-size: 62px;
+          font-weight: 950;
+          line-height: 1;
+          letter-spacing: -0.02em;
+          box-shadow: 0 18px 38px rgba(0, 23, 69, 0.20);
+        }
+
+        .display-hero-progress {
+          min-height: 270px;
+          display: grid;
+          grid-template-columns: 150px minmax(0, 1fr);
+          align-items: center;
+          gap: 16px;
+          padding-bottom: 22px;
+        }
+
+        .display-overall-label {
+          color: #fff;
+          font-size: 22px;
+          font-weight: 900;
+          text-align: right;
+          white-space: nowrap;
+          text-shadow: 0 3px 12px rgba(0, 0, 0, 0.22);
+        }
+
+        .display-overall-gauge {
+          position: relative;
+          width: min(500px, 32vw);
+          height: min(250px, 16vw);
+          min-width: 420px;
+          min-height: 210px;
+          overflow: hidden;
+        }
+
+        .display-overall-gauge::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 520px 520px 0 0;
+          background:
+            conic-gradient(
+              from 270deg at 50% 100%,
+              #ecf4ff 0deg,
+              #ecf4ff 42deg,
+              rgba(255, 255, 255, 0.16) 42deg,
+              rgba(255, 255, 255, 0.16) 180deg,
+              transparent 180deg
+            );
+          -webkit-mask:
+            radial-gradient(circle at 50% 100%, transparent 0 48%, #000 49% 66%, transparent 67%);
+          mask:
+            radial-gradient(circle at 50% 100%, transparent 0 48%, #000 49% 66%, transparent 67%);
+        }
+
+        .display-overall-gauge::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          bottom: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 520px 520px 0 0;
+          background:
+            conic-gradient(
+              from 270deg at 50% 100%,
+              #17b690 0deg,
+              #287cff var(--arc-deg),
+              transparent var(--arc-deg),
+              transparent 180deg
+            );
+          -webkit-mask:
+            radial-gradient(circle at 50% 100%, transparent 0 48%, #000 49% 66%, transparent 67%);
+          mask:
+            radial-gradient(circle at 50% 100%, transparent 0 48%, #000 49% 66%, transparent 67%);
+        }
+
+        .display-overall-gauge strong {
+          position: absolute;
+          left: 50%;
+          bottom: 20px;
+          transform: translateX(-50%);
+          color: #fff;
+          font-size: 76px;
+          font-weight: 950;
+          line-height: 1;
+          letter-spacing: -0.02em;
+          text-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+          z-index: 2;
+        }
+
+        .display-hero-brand {
+          align-self: start;
+          justify-self: end;
+          margin-top: 16px;
+          text-align: right;
+          color: #fff;
+          text-shadow: 0 3px 14px rgba(0, 0, 0, 0.22);
+        }
+
+        .display-hero-brand span,
+        .display-hero-brand strong {
+          display: block;
+          white-space: nowrap;
+        }
+
+        .display-hero-brand span {
+          font-size: 20px;
+          font-weight: 900;
+        }
+
+        .display-hero-brand strong {
+          margin-top: 3px;
+          font-size: 28px;
+          font-weight: 950;
+          line-height: 1.1;
+        }
+
+        .display-card-zone {
+          padding: 36px 42px 46px;
+          background:
+            linear-gradient(90deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0)),
+            #eaf4ff;
+        }
+
+        .display-project-grid {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 28px 30px;
+          width: 100%;
+        }
+
+        .display-project-card {
+          min-height: 420px;
+          padding: 30px 30px 28px;
+          border-radius: 12px;
+          background: #fff;
+          box-shadow: 0 18px 34px rgba(26, 69, 121, 0.13);
+          box-sizing: border-box;
+        }
+
+        .display-project-card h3 {
+          min-height: 78px;
+          margin: 0 0 18px;
+          color: #050d1b;
+          font-size: clamp(24px, 1.7vw, 34px);
+          font-weight: 950;
+          line-height: 1.23;
+          letter-spacing: -0.02em;
+          word-break: keep-all;
+        }
+
+        .display-card-gauge {
+          position: relative;
+          width: 220px;
+          height: 112px;
+          margin: 0 auto 10px;
+          overflow: hidden;
+        }
+
+        .display-card-gauge::before,
+        .display-card-gauge::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 230px 230px 0 0;
+        }
+
+        .display-card-gauge::before {
+          background:
+            conic-gradient(
+              from 270deg at 50% 100%,
+              #18b58f 0deg,
+              #237cff var(--arc-deg),
+              #e9f1fc var(--arc-deg),
+              #e9f1fc 180deg,
+              transparent 180deg
+            );
+        }
+
+        .display-card-gauge::after {
+          left: 32px;
+          right: 32px;
+          top: 32px;
+          bottom: -1px;
+          border-radius: 168px 168px 0 0;
+          background: #fff;
+        }
+
+        .display-card-gauge-value {
+          position: absolute;
+          left: 50%;
+          bottom: -1px;
+          transform: translateX(-50%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-end;
+          z-index: 2;
+        }
+
+        .display-card-gauge-value span {
+          color: #8a95a5;
+          font-size: 15px;
+          font-weight: 850;
+          white-space: nowrap;
+        }
+
+        .display-card-gauge-value strong {
+          color: #2478f2;
+          font-size: 50px;
+          font-weight: 950;
+          line-height: 0.94;
+          letter-spacing: -0.02em;
+        }
+
+        .display-card-divider {
+          height: 2px;
+          margin: 8px 0 14px;
+          background: #e7eef7;
+        }
+
+        .display-card-metrics {
+          display: grid;
+          gap: 12px;
+        }
+
+        .display-metric-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 12px;
+          align-items: end;
+        }
+
+        .display-metric-row strong,
+        .display-metric-row span,
+        .display-metric-row em {
+          display: block;
+        }
+
+        .display-metric-row strong {
+          color: #050d1b;
+          font-size: 15px;
+          font-weight: 950;
+          line-height: 1.26;
+          word-break: keep-all;
+        }
+
+        .display-metric-row em {
+          margin-top: 2px;
+          color: #9aa5b5;
+          font-size: 10px;
+          font-style: normal;
+          font-weight: 800;
+        }
+
+        .display-metric-row span {
+          margin-top: 3px;
+          color: #111827;
+          font-size: 18px;
+          font-weight: 850;
+          line-height: 1.15;
+          word-break: keep-all;
+        }
+
+        .display-metric-row b {
+          color: #2478f2;
+          font-size: 26px;
+          font-weight: 950;
+          line-height: 1;
+          white-space: nowrap;
+          text-align: right;
+        }
+
         div[data-testid="stDataFrame"] {
           border: 1px solid var(--line);
           border-radius: 8px;
@@ -6982,7 +7464,7 @@ import_runs_df = load_import_runs()
 countdown_label, countdown_status = minsaeng_countdown()
 current_view = active_view()
 
-if current_view != "check":
+if current_view not in {"check", "check_display"}:
     st.markdown(
         f"""
         <header class="top-board-header notranslate" translate="no" lang="ko">
@@ -7012,6 +7494,8 @@ if observations_df.empty:
 
 if current_view == "check":
     render_project_dashboard(EMERGENCY_PROJECTS)
+elif current_view == "check_display":
+    render_project_display_board(EMERGENCY_PROJECTS)
 elif current_view == "admin":
     render_admin_dashboard(EMERGENCY_PROJECTS)
 else:
