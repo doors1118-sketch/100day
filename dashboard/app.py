@@ -393,10 +393,8 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
         ProjectMetric("application_cost_cases", "신청비용 지원 건수", "건", 180, "180건"),
     ),
     "P010": (
-        ProjectMetric("joint_investigation_cases", "기획수사·합동단속", "회", 1, "1회", True),
-        ProjectMetric("report_consult_cases", "신고·상담 접수 건수", "건", None, "부서 목표 입력"),
-        ProjectMetric("investigation_start_cases", "수사 착수 건수", "건", None, "부서 목표 입력"),
-        ProjectMetric("relief_link_cases", "피해구제 연계 건수", "건", None, "부서 목표 입력"),
+        ProjectMetric("tf_staff_count", "1단계 TF 구성 인원", "명", 2, "2명(7월~)", True),
+        ProjectMetric("formal_team_staff_count", "2단계 민생경제수사팀 신설 인원", "명", 6, "총 6명(9~10월)"),
     ),
 }
 
