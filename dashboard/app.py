@@ -2329,9 +2329,12 @@ def render_project_compact_card(project: EmergencyProject) -> str:
     hover_detail = compact_hover_detail_html(project)
     number_mark = PROJECT_NUMBER_MARKS.get(project.number, str(project.number))
     field_group = PROJECT_FIELD_GROUPS.get(project.project_id, project.field)
+    title_markup = safe_text(project.title)
+    if project.project_id == "P002":
+        title_markup = "소상공인 에너지바우처 지급<br><span class=\"project-title-sub\">공공요금·지방세 부담 완화</span>"
     return f"""
-      <article class="project-compact-card" tabindex="0" aria-label="{safe_text(project.title)} 상세 보기">
-        <h3><span>{safe_text(number_mark)}</span><strong>{safe_text(project.title)}</strong></h3>
+      <article class="project-compact-card project-{safe_text(project.project_id)}" tabindex="0" aria-label="{safe_text(project.title)} 상세 보기">
+        <h3><span>{safe_text(number_mark)}</span><strong>{title_markup}</strong></h3>
         <div class="project-compact-main">
           <div class="project-compact-info">
             <em>{safe_text(field_group)}</em>
@@ -2364,7 +2367,7 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
     if countdown_label == "D-DAY":
         countdown_caption = "D-Day"
     elif countdown_label.startswith("D-"):
-        countdown_caption = f"D-Day: {countdown_label[2:]}일 남음"
+        countdown_caption = f"D-Day : {countdown_label[2:]}일"
     else:
         countdown_caption = countdown_label
     header_image_uri = image_data_uri(str(PROJECT_HEADER_IMAGE_PATH))
@@ -4654,13 +4657,13 @@ def inject_css() -> None:
 
         .project-overall-progress em {
           color: #344256;
-          max-width: 82px;
+          max-width: none;
           font-size: 11px;
           font-style: normal;
           font-weight: 950;
           line-height: 1.2;
           text-align: center;
-          white-space: normal;
+          white-space: nowrap;
         }
 
         .project-compact-grid {
@@ -4694,14 +4697,14 @@ def inject_css() -> None:
 
         .project-compact-card h3 {
           display: flex;
-          min-height: 40px;
+          min-height: 36px;
           align-items: flex-start;
           gap: 5px;
-          margin: 0 0 8px;
+          margin: 0 0 4px;
           color: #162236;
           font-size: clamp(16px, 0.94vw, 18px);
           font-weight: 950;
-          line-height: 1.14;
+          line-height: 1.08;
           word-break: keep-all;
         }
 
@@ -4710,7 +4713,7 @@ def inject_css() -> None:
           color: #0f376f;
           font-size: 20px;
           font-weight: 950;
-          line-height: 1.14;
+          line-height: 1.08;
         }
 
         .project-compact-card h3 strong {
@@ -4725,39 +4728,62 @@ def inject_css() -> None:
           -webkit-line-clamp: 2;
         }
 
+        .project-compact-card h3 .project-title-sub {
+          display: inline-block;
+          margin-top: 1px;
+        }
+
+        .project-compact-card.project-P010 h3 {
+          gap: 3px;
+        }
+
+        .project-compact-card.project-P010 h3 span {
+          font-size: 17px;
+        }
+
+        .project-compact-card.project-P010 h3 strong {
+          display: block;
+          overflow: hidden;
+          font-size: clamp(14px, 0.78vw, 15.5px);
+          letter-spacing: -0.055em;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          -webkit-line-clamp: unset;
+        }
+
         .project-compact-kpi {
           display: grid;
-          gap: 6px;
-          margin: 0 0 7px;
-          padding: 8px 9px 8px;
+          gap: 4px;
+          margin: 0 0 5px;
+          padding: 6px 8px 6px;
           border: 1px solid #c9dcf0;
           border-radius: 13px;
           background:
-            linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(238, 247, 255, 0.96) 100%);
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 18px rgba(34, 75, 130, 0.08);
+            linear-gradient(180deg, rgba(225, 239, 255, 0.98) 0%, rgba(205, 231, 255, 0.96) 100%);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 8px 18px rgba(34, 75, 130, 0.12);
           text-align: center;
         }
 
         .project-compact-kpi-item {
           min-width: 0;
-          padding: 5px 7px 6px;
-          border: 1px solid rgba(32, 114, 184, 0.11);
+          padding: 4px 6px 5px;
+          border: 1px solid rgba(32, 114, 184, 0.2);
           border-radius: 10px;
-          background: rgba(255, 255, 255, 0.72);
-          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+          background: #f8fbff;
+          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.08);
         }
 
         .project-compact-kpi-item:last-child {
-          padding-bottom: 8px;
+          padding-bottom: 5px;
         }
 
         .project-compact-kpi-name {
           display: block;
           overflow: hidden;
           color: #0f376f;
-          font-size: 12px;
+          font-size: 11.5px;
           font-weight: 950;
-          line-height: 1.2;
+          line-height: 1.08;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
@@ -4765,29 +4791,29 @@ def inject_css() -> None:
         .project-compact-kpi-values {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 5px;
-          margin-top: 4px;
+          gap: 4px;
+          margin-top: 3px;
         }
 
         .project-compact-kpi-values p {
           margin: 0;
           min-width: 0;
           overflow: hidden;
-          padding: 5px 6px 6px;
+          padding: 4px 6px 5px;
           border-radius: 8px;
-          background: #edf5ff;
+          background: #dcecff;
           text-align: left;
         }
 
         .project-compact-kpi-values p:last-child {
-          background: #e9fbf6;
+          background: #d9f8ef;
         }
 
         .project-compact-kpi-values b {
           display: block;
-          margin-bottom: 3px;
+          margin-bottom: 2px;
           color: #2d5e9c;
-          font-size: 13px;
+          font-size: 12.5px;
           font-weight: 950;
           line-height: 1;
         }
@@ -4800,9 +4826,9 @@ def inject_css() -> None:
           display: -webkit-box;
           overflow: hidden;
           color: #111827;
-          font-size: 13px;
+          font-size: 12.5px;
           font-weight: 950;
-          line-height: 1.12;
+          line-height: 1.08;
           white-space: normal;
           word-break: keep-all;
           -webkit-box-orient: vertical;
@@ -4811,12 +4837,12 @@ def inject_css() -> None:
 
         .project-compact-kpi em {
           display: inline-flex;
-          margin-top: 4px;
-          padding: 3px 8px;
+          margin-top: 3px;
+          padding: 3px 7px;
           border-radius: 999px;
           background: #173b75;
           color: #ffffff;
-          font-size: 10.5px;
+          font-size: 10px;
           font-style: normal;
           font-weight: 950;
           line-height: 1;
@@ -4825,8 +4851,8 @@ def inject_css() -> None:
 
         .project-compact-kpi i {
           display: block;
-          height: 9px;
-          margin-top: 5px;
+          height: 8px;
+          margin-top: 4px;
           overflow: hidden;
           border-radius: 999px;
           background: #d5e3f0;
@@ -4847,7 +4873,7 @@ def inject_css() -> None:
           grid-template-columns: minmax(0, 1fr) 58px;
           gap: 7px;
           align-items: start;
-          margin-bottom: 8px;
+          margin-bottom: 5px;
         }
 
         .project-compact-donut {
@@ -4883,7 +4909,7 @@ def inject_css() -> None:
           min-width: 0;
           justify-self: end;
           width: 100%;
-          padding: 8px 10px;
+          padding: 6px 9px;
           border-radius: 13px;
           background: #f3f8fc;
         }
@@ -4891,13 +4917,13 @@ def inject_css() -> None:
         .project-compact-info em {
           display: inline-flex;
           max-width: 100%;
-          margin-bottom: 4px;
-          padding: 4px 9px;
+          margin-bottom: 3px;
+          padding: 3px 8px;
           overflow: hidden;
           border-radius: 999px;
           background: #00a7a3;
           color: #fff;
-          font-size: 11px;
+          font-size: 10.5px;
           font-style: normal;
           font-weight: 950;
           line-height: 1.2;
@@ -4908,11 +4934,11 @@ def inject_css() -> None:
         .project-compact-info p {
           display: block;
           min-height: 0;
-          margin: 2px 0;
+          margin: 1px 0;
           color: #26364c;
-          font-size: 11.5px;
+          font-size: 11px;
           font-weight: 850;
-          line-height: 1.3;
+          line-height: 1.2;
           white-space: normal;
           word-break: keep-all;
           -webkit-line-clamp: unset;
@@ -4990,6 +5016,7 @@ def inject_css() -> None:
 
         .project-compact-steps {
           padding: 0 1px;
+          margin-top: -1px;
         }
 
         .project-compact-step-track {
@@ -5011,16 +5038,16 @@ def inject_css() -> None:
         .project-compact-step-labels {
           display: grid;
           gap: 2px;
-          margin-top: 5px;
+          margin-top: 4px;
         }
 
         .project-compact-step {
           position: relative;
-          padding-top: 7px;
-          color: #4c5f74;
-          font-size: 9.5px;
-          font-weight: 900;
-          line-height: 1.08;
+          padding-top: 6px;
+          color: #145fc7;
+          font-size: 10px;
+          font-weight: 950;
+          line-height: 1.04;
           text-align: center;
           word-break: keep-all;
         }
@@ -5045,7 +5072,7 @@ def inject_css() -> None:
         }
 
         .project-compact-step.is-current {
-          color: #086b78;
+          color: #003f9e;
         }
 
         .project-hover-detail {
