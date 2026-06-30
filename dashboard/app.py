@@ -24,9 +24,17 @@ import streamlit.components.v1 as components
 APP_HOME = Path(os.getenv("MINSAENG100_HOME", Path(__file__).resolve().parents[1]))
 CATALOG_PATH = APP_HOME / "config" / "indicators.json"
 DB_PATH = Path(os.getenv("MINSAENG100_DB", APP_HOME / "data" / "minsaeng100.sqlite"))
+TITLE_MARK_PATH = APP_HOME / "dashboard" / "assets" / "minsaeng100_emergency_title.png"
 MINSAENG_START_DATE = date(2026, 7, 1)
 MINSAENG_TOTAL_DAYS = 100
 KOREA_TZ = ZoneInfo("Asia/Seoul")
+
+
+def image_data_uri(path: Path, mime: str = "image/png") -> str:
+    if not path.exists():
+        return ""
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime};base64,{encoded}"
 
 
 def table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
@@ -2303,6 +2311,12 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
         countdown_caption = f"D-Day: {countdown_label[2:]}일 남음"
     else:
         countdown_caption = countdown_label
+    title_mark_uri = image_data_uri(TITLE_MARK_PATH)
+    title_mark_markup = (
+        f'<img src="{title_mark_uri}" alt="민생100일 비상조치" />'
+        if title_mark_uri
+        else '<strong class="title-art-fallback">민생100일 비상조치</strong>'
+    )
     html_cards = "\n".join(render_project_compact_card(project) for project in projects)
     board_class = "project-board compact"
     grid_class = "project-compact-grid"
@@ -2313,12 +2327,7 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
             <div class="project-board-spacer" aria-hidden="true"></div>
             <div class="project-head-title">
               <div class="project-title-art" role="img" aria-label="민생100일 비상조치 추진상황">
-                <div class="title-art-main">
-                  <span class="title-art-minsaeng">민생</span>
-                  <span class="title-art-100">100</span>
-                  <span class="title-art-days">일</span>
-                  <span class="title-art-emergency">비상조치</span>
-                </div>
+                <div class="title-art-image">{title_mark_markup}</div>
                 <div class="title-art-sub">
                   <i aria-hidden="true"></i>
                   <strong>추진상황</strong>
@@ -4516,6 +4525,30 @@ def inject_css() -> None:
           pointer-events: none;
         }
 
+        .title-art-image {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+        }
+
+        .title-art-image img {
+          display: block;
+          width: auto;
+          max-width: min(360px, 100%);
+          max-height: 86px;
+          object-fit: contain;
+        }
+
+        .title-art-fallback {
+          display: block;
+          color: #062461;
+          font-size: clamp(32px, 2.5vw, 46px);
+          font-weight: 950;
+          line-height: 1.05;
+          word-break: keep-all;
+        }
+
         .title-art-main {
           display: inline-flex;
           align-items: flex-end;
@@ -6465,6 +6498,11 @@ def inject_css() -> None:
           .project-title-art::before {
             width: 112%;
             height: 96px;
+          }
+
+          .title-art-image img {
+            max-width: 230px;
+            max-height: 72px;
           }
 
           .title-art-main {
