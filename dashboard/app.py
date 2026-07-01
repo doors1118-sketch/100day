@@ -7629,21 +7629,21 @@ def inject_css() -> None:
 
         .display-card-progress-panel {
           margin-top: auto;
-          padding: 7px 8px 6px;
-          border: 1px solid #b8d6f3;
+          padding: 5px 7px 4px;
+          border: 1px solid #d6e7f7;
           border-radius: 9px;
           background:
-            linear-gradient(135deg, rgba(228, 241, 255, 0.98), rgba(199, 224, 249, 0.96)),
-            color-mix(in srgb, var(--accent) 14%, #d9ecff);
+            linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(231, 243, 255, 0.92)),
+            color-mix(in srgb, var(--accent) 8%, #edf7ff);
           box-shadow:
-            0 8px 18px rgba(28, 81, 140, 0.14),
-            inset 0 1px 0 rgba(255, 255, 255, 0.84);
+            0 6px 16px rgba(28, 81, 140, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9);
         }
 
         .display-card-foot {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 50px;
-          gap: 8px;
+          grid-template-columns: minmax(0, 1fr) 44px;
+          gap: 7px;
           align-items: center;
           margin-top: 0;
           padding-top: 0;
@@ -7662,8 +7662,8 @@ def inject_css() -> None:
         .display-card-meta p {
           grid-template-columns: 48px minmax(0, 1fr);
           gap: 5px;
-          font-size: 9.4px;
-          line-height: 1.18;
+          font-size: 8.8px;
+          line-height: 1.12;
         }
 
         .display-card-meta span {
@@ -7684,8 +7684,8 @@ def inject_css() -> None:
 
         .display-card-mini-gauge {
           position: relative;
-          width: 50px;
-          height: 50px;
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
           display: flex;
           flex-direction: column;
@@ -7700,7 +7700,7 @@ def inject_css() -> None:
         .display-card-mini-gauge::after {
           content: "";
           position: absolute;
-          inset: 7px;
+          inset: 6px;
           border-radius: 50%;
           background: #fff;
         }
@@ -7715,7 +7715,7 @@ def inject_css() -> None:
 
         .display-card-mini-gauge span {
           color: #7d8798;
-          font-size: 7.5px;
+          font-size: 7px;
           font-weight: 900;
           line-height: 1;
         }
@@ -7723,14 +7723,14 @@ def inject_css() -> None:
         .display-card-mini-gauge strong {
           margin-top: 0;
           color: #120a58;
-          font-size: 17px;
+          font-size: 15px;
           font-weight: 950;
           line-height: 0.98;
         }
 
         .display-stage-track {
-          margin-top: 6px;
-          padding-top: 9px;
+          margin-top: 4px;
+          padding-top: 7px;
         }
 
         .display-stage-line {
@@ -7738,12 +7738,12 @@ def inject_css() -> None:
         }
 
         .display-stage-labels {
-          margin-top: 5px;
+          margin-top: 4px;
         }
 
         .display-stage-point {
           color: #263953;
-          font-size: 8.2px;
+          font-size: 7.8px;
           line-height: 1.12;
         }
 
