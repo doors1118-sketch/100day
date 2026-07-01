@@ -214,8 +214,9 @@ class EmergencyProject:
     status: str = "착수 전"
     progress_pct: int = 0
     latest_update: str = "부서 일일 입력 대기"
+    today_result: str = ""
     issue: str = "입력 전"
-    budget_status: str = "미입력"
+    budget_status: str = "추진중"
     risk_level: str = "정상"
     next_plan: str = ""
     updated_at: str = ""
@@ -463,7 +464,8 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
 
 
 PROJECT_STATUS_OPTIONS = ["계획중", "예산편성중", "추진중", "완료"]
-BUDGET_STATUS_OPTIONS = ["미입력", "비예산", "미편성", "요구중", "확보", "집행중", "집행완료"]
+BUDGET_STATUS_OPTIONS = ["추진완료", "추진중", "중단"]
+DEFAULT_BUDGET_STATUS = "추진중"
 RISK_LEVEL_OPTIONS = ["정상", "주의", "지연"]
 ADMIN_ROLES = {
     "admin": "관리자",
@@ -1978,6 +1980,16 @@ def project_stages(project_id: str) -> tuple[str, ...]:
     return PROJECT_STAGE_MAP.get(project_id, tuple(PROJECT_STATUS_OPTIONS))
 
 
+def normalize_budget_status(value: Any) -> str:
+    status = "" if value is None or pd.isna(value) else str(value).strip()
+    return status if status in BUDGET_STATUS_OPTIONS else DEFAULT_BUDGET_STATUS
+
+
+def normalize_risk_level(value: Any) -> str:
+    risk_level = "" if value is None or pd.isna(value) else str(value).strip()
+    return risk_level if risk_level in RISK_LEVEL_OPTIONS else "정상"
+
+
 def stage_progress_pct(project_id: str, status: str) -> int:
     stages = project_stages(project_id)
     if not stages or status not in stages:
@@ -2203,16 +2215,21 @@ def apply_project_updates(
             or "부서 입력 완료"
         )
         latest_status = str(latest.get("status") or project.status)
+        latest_budget_status = normalize_budget_status(
+            latest.get("budget_status") or project.budget_status
+        )
+        latest_risk_level = normalize_risk_level(latest.get("risk_level") or project.risk_level)
         merged.append(
             replace(
                 project,
                 status=latest_status,
                 progress_pct=stage_progress_pct(project.project_id, latest_status),
                 latest_update=latest_summary,
-                issue=compact_text(latest.get("issue_text"), 96) or "특이사항 없음",
-                budget_status=str(latest.get("budget_status") or project.budget_status),
-                risk_level=str(latest.get("risk_level") or project.risk_level),
-                next_plan=compact_text(latest.get("next_plan"), 96),
+                today_result=compact_text(latest.get("today_result"), 320),
+                issue=compact_text(latest.get("issue_text"), 320) or "특이사항 없음",
+                budget_status=latest_budget_status,
+                risk_level=latest_risk_level,
+                next_plan=compact_text(latest.get("next_plan"), 320),
                 updated_at=str(latest.get("created_at") or ""),
                 quantitative_results=parse_quantitative_results(
                     latest.get("quantitative_results")
@@ -2645,12 +2662,91 @@ def display_stage_points_html(project: EmergencyProject) -> str:
     """
 
 
+def display_card_detail_popover_html(
+    project: EmergencyProject,
+    achievement: float,
+    progress: float,
+) -> str:
+    metric_rows: list[str] = []
+    for label, target_text, unit_text, current_text, waiting in display_metric_groups(project):
+        waiting_class = " is-waiting" if waiting else ""
+        unit_markup = f'<em>단위: {safe_text(unit_text)}</em>' if unit_text else ""
+        metric_rows.append(
+            f"""
+            <div class="display-detail-metric">
+              <div>
+                <strong>{safe_text(label)}</strong>
+                {unit_markup}
+              </div>
+              <p><span>목표</span><b>{safe_text(target_text)}</b></p>
+              <p><span>실적</span><b class="{waiting_class.strip()}">{safe_text(current_text)}</b></p>
+            </div>
+            """
+        )
+    if not metric_rows:
+        metric_rows.append(
+            """
+            <div class="display-detail-metric">
+              <div><strong>정량 수혜지표</strong></div>
+              <p><span>목표</span><b>목표 미설정</b></p>
+              <p><span>실적</span><b class="is-waiting">입력 대기</b></p>
+            </div>
+            """
+        )
+    today_result = project.today_result or project.latest_update or "입력 이력 없음"
+    next_plan = project.next_plan or "입력 이력 없음"
+    issue_text = project.issue if project.issue and project.issue != "입력 전" else "특이사항 없음"
+    updated_at = project.updated_at or "입력 전"
+    return f"""
+      <div class="display-card-detail-popover" aria-hidden="true">
+        <div class="display-detail-head">
+          <span>{project.number:02d}</span>
+          <div>
+            <b>{safe_text(project.title)}</b>
+            <em>{safe_text(project.field)}</em>
+          </div>
+        </div>
+        <div class="display-detail-badges">
+          <span>추진상태 <b>{safe_text(project.status)}</b></span>
+          <span>상태 <b>{safe_text(project.budget_status)}</b></span>
+          <span>위험도 <b>{safe_text(project.risk_level)}</b></span>
+          <span>입력일시 <b>{safe_text(updated_at)}</b></span>
+        </div>
+        <div class="display-detail-summary">
+          <p><span>진행률</span><strong>{progress:.0f}%</strong></p>
+          <p><span>달성률</span><strong>{achievement:.1f}%</strong></p>
+          <p><span>예산</span><strong>{safe_text(project.budget)}</strong></p>
+          <p><span>담당부서</span><strong>{safe_text(project.department)}</strong></p>
+        </div>
+        <div class="display-detail-section">
+          <h4>정량 실적</h4>
+          <div class="display-detail-metrics">
+            {"".join(metric_rows)}
+          </div>
+        </div>
+        <div class="display-detail-section">
+          <h4>금일 추진사항</h4>
+          <p>{safe_text(today_result)}</p>
+        </div>
+        <div class="display-detail-section">
+          <h4>향후계획</h4>
+          <p>{safe_text(next_plan)}</p>
+        </div>
+        <div class="display-detail-section">
+          <h4>쟁점·애로사항</h4>
+          <p>{safe_text(issue_text)}</p>
+        </div>
+      </div>
+    """
+
+
 def display_project_card(project: EmergencyProject) -> str:
     title = DISPLAY_PROJECT_TITLES.get(project.project_id, project.title)
     progress = max(0.0, min(float(project.progress_pct), 100.0))
     achievement = display_achievement_pct(project)
     field_group = PROJECT_FIELD_GROUPS.get(project.project_id, project.field)
     field_class = PROJECT_FIELD_CLASSES.get(field_group, "field-default")
+    detail_popover = display_card_detail_popover_html(project, achievement, progress)
     return f"""
       <article class="display-project-card {safe_text(field_class)}">
         <div class="display-card-field">
@@ -2680,6 +2776,7 @@ def display_project_card(project: EmergencyProject) -> str:
           </div>
           {display_stage_points_html(project)}
         </div>
+        {detail_popover}
       </article>
     """
 
@@ -2915,10 +3012,10 @@ def project_history_table(updates: pd.DataFrame, projects: list[EmergencyProject
         columns={
             "created_at": "입력일시",
             "status": "추진상태",
-            "progress_pct": "추진률",
+            "progress_pct": "진행률",
             "risk_level": "위험도",
-            "budget_status": "예산상태",
-            "today_result": "금일 추진실적",
+            "budget_status": "상태",
+            "today_result": "금일 추진사항",
             "next_plan": "향후계획",
             "issue_text": "쟁점·애로사항",
             "public_summary": "공개 요약",
@@ -2929,10 +3026,10 @@ def project_history_table(updates: pd.DataFrame, projects: list[EmergencyProject
             "입력일시",
             "사업명",
             "추진상태",
-            "추진률",
+            "진행률",
             "위험도",
-            "예산상태",
-            "금일 추진실적",
+            "상태",
+            "금일 추진사항",
             "향후계획",
             "쟁점·애로사항",
             "입력부서",
@@ -2997,7 +3094,7 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
     latest = latest_update_for_project(selected_project_id, updates) or {}
     stage_options = list(project_stages(selected_project_id))
     status_default = str(latest.get("status") or stage_options[0])
-    budget_default = str(latest.get("budget_status") or "미입력")
+    budget_default = normalize_budget_status(latest.get("budget_status"))
     risk_default = str(latest.get("risk_level") or "정상")
     latest_quantitative = parse_quantitative_results(latest.get("quantitative_results"))
 
@@ -3013,11 +3110,11 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
             )
         with col2:
             budget_status = st.selectbox(
-                "예산상태",
+                "상태",
                 BUDGET_STATUS_OPTIONS,
                 index=BUDGET_STATUS_OPTIONS.index(budget_default)
                 if budget_default in BUDGET_STATUS_OPTIONS
-                else 0,
+                else BUDGET_STATUS_OPTIONS.index("추진중"),
             )
         with col3:
             risk_level = st.selectbox(
@@ -3029,7 +3126,7 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
             )
         progress_pct = stage_progress_pct(selected_project_id, status)
         st.caption(
-            f"추진률은 하단 추진상황 단계 기준으로 자동 산정됩니다. 현재 선택값: {progress_pct}%"
+            f"진행률은 상황판 카드 하단의 추진상태 단계 기준으로 자동 산정됩니다. 현재 선택값: {progress_pct}%"
         )
         st.markdown("##### 정량 실적")
         st.caption("금액 지표는 만원 단위로 입력합니다. 상황판에서는 억원·조원 단위로 자동 변환됩니다.")
@@ -3054,7 +3151,7 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
         else:
             st.info("이 사업에는 정량 실적 항목이 설정되어 있지 않습니다.")
         today_result = st.text_area(
-            "금일 추진실적",
+            "금일 추진사항",
             value=str(latest.get("today_result") or ""),
             height=110,
             placeholder="오늘 처리한 협의, 예산 작업, 신청·접수, 지급실적, 현장 조치 등을 입력",
@@ -3074,9 +3171,9 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
         public_summary = st.text_input(
             "상황판 공개 요약",
             value=str(latest.get("public_summary") or ""),
-            placeholder="카드에 짧게 노출할 문장. 미입력 시 금일 추진실적 앞부분을 사용",
+            placeholder="카드에 짧게 노출할 문장. 미입력 시 금일 추진사항 앞부분을 사용",
         )
-        submitted = st.form_submit_button("추진실적 저장", use_container_width=True)
+        submitted = st.form_submit_button("저장", use_container_width=True)
     if submitted:
         insert_project_update(
             user=user,
@@ -3091,7 +3188,7 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
             issue_text=issue_text,
             public_summary=public_summary,
         )
-        st.success("추진실적을 저장했습니다. 추진상황 화면에는 최신 입력값이 반영됩니다.")
+        st.success("저장했습니다. 추진상황 화면에는 최신 입력값이 반영됩니다.")
         st.rerun()
 
 
@@ -3225,7 +3322,7 @@ def render_admin_dashboard(projects: list[EmergencyProject]) -> None:
             st.session_state.pop("admin_user", None)
             st.rerun()
     with col2:
-        st.info("상태·추진률·실적은 저장 시점마다 이력으로 남습니다. 오입력 시 기존 이력을 수정하지 말고 새 이력으로 정정 입력하는 방식입니다.")
+        st.info("추진상태·상태·위험도·실적은 저장 시점마다 이력으로 남습니다. 오입력 시 기존 이력을 수정하지 말고 새 이력으로 정정 입력하는 방식입니다.")
 
     if user["role"] == "viewer":
         render_update_history(projects)
@@ -5472,10 +5569,25 @@ def inject_css() -> None:
         .project-compact-step.is-current::before {
           border-color: #18aaa6;
           background: #18aaa6;
+          box-shadow: 0 0 0 3px rgba(24, 170, 166, 0.16);
         }
 
         .project-compact-step.is-current {
           color: #003f9e;
+          font-weight: 950;
+        }
+
+        .project-compact-step.is-current::after {
+          content: "";
+          position: absolute;
+          left: 50%;
+          top: -13px;
+          width: 0;
+          height: 0;
+          transform: translateX(-50%);
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 7px solid #0070d2;
         }
 
         .project-hover-detail {
@@ -7551,6 +7663,191 @@ def inject_css() -> None:
         }
 
         .display-project-card {
+          overflow: visible;
+        }
+
+        .display-project-card:hover {
+          z-index: 80;
+        }
+
+        .display-card-detail-popover {
+          position: fixed;
+          z-index: 9999;
+          left: 50%;
+          top: 50%;
+          width: min(940px, 54vw);
+          min-height: 46vh;
+          max-height: 68vh;
+          padding: 26px 30px 28px;
+          overflow: auto;
+          border: 1px solid #c9ddf1;
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.98);
+          box-shadow: 0 34px 90px rgba(7, 24, 54, 0.28);
+          opacity: 0;
+          pointer-events: none;
+          transform: translate(-50%, -50%) scale(0.985);
+          transition: opacity 150ms ease, transform 150ms ease;
+        }
+
+        .display-project-card:hover .display-card-detail-popover {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+        }
+
+        .display-detail-head {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 16px;
+          padding-bottom: 14px;
+          border-bottom: 1px solid #d7e4f2;
+        }
+
+        .display-detail-head > span {
+          display: grid;
+          width: 42px;
+          height: 42px;
+          place-items: center;
+          border-radius: 14px;
+          background: linear-gradient(135deg, var(--accent), var(--accent-2));
+          color: #fff;
+          font-size: 18px;
+          font-weight: 950;
+        }
+
+        .display-detail-head b {
+          display: block;
+          color: #07142b;
+          font-size: 27px;
+          font-weight: 950;
+          line-height: 1.18;
+          letter-spacing: -0.04em;
+        }
+
+        .display-detail-head em {
+          display: block;
+          margin-top: 5px;
+          color: var(--accent);
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 900;
+        }
+
+        .display-detail-badges {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 8px;
+          margin-bottom: 14px;
+        }
+
+        .display-detail-badges span,
+        .display-detail-summary p {
+          margin: 0;
+          padding: 10px 12px;
+          border-radius: 12px;
+          background: #eef6ff;
+          color: #5b6b80;
+          font-size: 12px;
+          font-weight: 850;
+        }
+
+        .display-detail-badges b,
+        .display-detail-summary strong {
+          display: block;
+          margin-top: 4px;
+          color: #07142b;
+          font-size: 16px;
+          font-weight: 950;
+          line-height: 1.2;
+        }
+
+        .display-detail-summary {
+          display: grid;
+          grid-template-columns: 0.7fr 0.7fr 1fr 1.2fr;
+          gap: 8px;
+          margin-bottom: 16px;
+        }
+
+        .display-detail-section {
+          margin-top: 14px;
+        }
+
+        .display-detail-section h4 {
+          margin: 0 0 8px;
+          color: #07142b;
+          font-size: 17px;
+          font-weight: 950;
+        }
+
+        .display-detail-section > p {
+          min-height: 50px;
+          margin: 0;
+          padding: 14px 16px;
+          border-radius: 14px;
+          background: #f3f7fb;
+          color: #102033;
+          font-size: 16px;
+          font-weight: 800;
+          line-height: 1.52;
+          white-space: pre-wrap;
+        }
+
+        .display-detail-metrics {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .display-detail-metric {
+          padding: 12px;
+          border: 1px solid #d6e7f7;
+          border-radius: 14px;
+          background: #f8fbff;
+        }
+
+        .display-detail-metric div {
+          display: flex;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+
+        .display-detail-metric strong {
+          color: var(--accent);
+          font-size: 14px;
+          font-weight: 950;
+        }
+
+        .display-detail-metric em {
+          color: #7e8798;
+          font-size: 12px;
+          font-style: normal;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        .display-detail-metric p {
+          display: grid;
+          grid-template-columns: 52px minmax(0, 1fr);
+          gap: 8px;
+          margin: 4px 0 0;
+          color: #6b7788;
+          font-size: 12px;
+          font-weight: 850;
+        }
+
+        .display-detail-metric b {
+          color: #07142b;
+          font-size: 14px;
+          font-weight: 950;
+        }
+
+        .display-detail-metric b.is-waiting {
+          color: #c23a32;
+        }
+
+        .display-project-card {
           height: 374px;
           min-height: 374px;
           padding: 16px 18px 13px;
@@ -7810,6 +8107,7 @@ def inject_css() -> None:
 
         .display-stage-line {
           height: 4px;
+          overflow: visible;
         }
 
         .display-stage-labels {
@@ -7826,6 +8124,44 @@ def inject_css() -> None:
           top: -12px;
           width: 8px;
           height: 8px;
+        }
+
+        .display-stage-point.is-done {
+          color: var(--accent);
+        }
+
+        .display-stage-point.is-current {
+          color: #003f9e;
+          font-weight: 950;
+        }
+
+        .display-stage-point.is-done::before {
+          width: 9px;
+          height: 9px;
+          border-color: var(--accent);
+          background: var(--accent);
+          box-shadow: 0 0 0 3px rgba(37, 195, 189, 0.16);
+        }
+
+        .display-stage-point.is-current::before {
+          width: 11px;
+          height: 11px;
+          border-color: #fff;
+          background: linear-gradient(135deg, var(--accent), var(--accent-2));
+          box-shadow: 0 0 0 4px rgba(0, 112, 210, 0.18);
+        }
+
+        .display-stage-point.is-current::after {
+          content: "";
+          position: absolute;
+          left: 50%;
+          top: -21px;
+          width: 0;
+          height: 0;
+          transform: translateX(-50%);
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 7px solid var(--accent-2);
         }
 
         div[data-testid="stDataFrame"] {
