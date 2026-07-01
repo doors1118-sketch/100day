@@ -8698,7 +8698,7 @@ if current_view not in {"check", "check_display"}:
               <a class="{nav_class('economy', current_view, 'nav-item nav-economy')}" href="?view=economy" aria-current="{str(current_view == 'economy').lower()}">
                 <span class="nav-title">민생100일 경제 상황판</span>
               </a>
-              <a class="{nav_class('check', current_view, 'nav-item nav-check')}" href="?view=check" aria-current="{str(current_view == 'check').lower()}">민생100일 비상대책 추진상황</a>
+              <a class="{nav_class('check_display', current_view, 'nav-item nav-check')}" href="?view=check_display" aria-current="{str(current_view == 'check_display').lower()}">민생100일 비상대책 추진상황</a>
             </nav>
             <div class="top-tools">
               <span class="lang-chip">KR</span>
