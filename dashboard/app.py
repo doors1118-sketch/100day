@@ -1978,6 +1978,13 @@ def project_stages(project_id: str) -> tuple[str, ...]:
     return PROJECT_STAGE_MAP.get(project_id, tuple(PROJECT_STATUS_OPTIONS))
 
 
+def stage_progress_pct(project_id: str, status: str) -> int:
+    stages = project_stages(project_id)
+    if not stages or status not in stages:
+        return 0
+    return int(round(((stages.index(status) + 1) / len(stages)) * 100))
+
+
 def project_metrics(project_id: str) -> tuple[ProjectMetric, ...]:
     return PROJECT_METRIC_MAP.get(project_id, ())
 
@@ -2021,6 +2028,82 @@ def metric_pct(current: float | None, target: float | None) -> float | None:
     if current is None or target is None or target <= 0:
         return None
     return max(0.0, min((current / target) * 100, 100.0))
+
+
+def metric_id_pct(project: EmergencyProject, metric_id: str) -> float | None:
+    metric = next(
+        (candidate for candidate in project_metrics(project.project_id) if candidate.metric_id == metric_id),
+        None,
+    )
+    if metric is None or metric.target_value is None or metric.target_value <= 0:
+        return None
+    current = metric_current(project, metric)
+    current_value = 0.0 if current is None else current
+    return metric_pct(current_value, metric.target_value)
+
+
+def metric_sum_pct(project: EmergencyProject, metric_ids: tuple[str, ...]) -> float | None:
+    metric_map = {metric.metric_id: metric for metric in project_metrics(project.project_id)}
+    current_total = 0.0
+    target_total = 0.0
+    units: set[str] = set()
+    for metric_id in metric_ids:
+        metric = metric_map.get(metric_id)
+        if metric is None or metric.target_value is None or metric.target_value <= 0:
+            continue
+        current_total += metric_current(project, metric) or 0.0
+        target_total += metric.target_value
+        units.add(metric.unit)
+    if target_total <= 0 or len(units) != 1:
+        return None
+    return metric_pct(current_total, target_total)
+
+
+def metric_group_pct(project: EmergencyProject, metric_ids: tuple[str, ...]) -> float | None:
+    summed_pct = metric_sum_pct(project, metric_ids)
+    if summed_pct is not None:
+        return summed_pct
+    pcts = [
+        pct
+        for metric_id in metric_ids
+        if (pct := metric_id_pct(project, metric_id)) is not None
+    ]
+    if not pcts:
+        return None
+    return sum(pcts) / len(pcts)
+
+
+def display_metric_specs(project_id: str) -> list[tuple[str, tuple[str, ...], str, str]]:
+    grouped = DISPLAY_METRIC_GROUPS.get(project_id)
+    if grouped:
+        return [
+            (label, tuple(metric_ids), target_text, unit_text)
+            for label, metric_ids, target_text, unit_text in grouped
+        ]
+    return [
+        (metric.label, (metric.metric_id,), metric.target_text, metric.unit)
+        for metric in list(project_metrics(project_id))[:2]
+    ]
+
+
+def display_achievement_pct(project: EmergencyProject) -> float:
+    specs = display_metric_specs(project.project_id)
+    metric_ids = tuple(
+        metric_id
+        for _label, spec_metric_ids, _target_text, _unit_text in specs
+        for metric_id in spec_metric_ids
+    )
+    summed_pct = metric_sum_pct(project, metric_ids)
+    if summed_pct is not None:
+        return summed_pct
+    group_pcts = [
+        pct
+        for _label, spec_metric_ids, _target_text, _unit_text in specs
+        if (pct := metric_group_pct(project, spec_metric_ids)) is not None
+    ]
+    if not group_pcts:
+        return 0.0
+    return max(0.0, min(sum(group_pcts) / len(group_pcts), 100.0))
 
 
 def format_metric_value(value: float | None, unit: str, compact: bool = False) -> str:
@@ -2119,11 +2202,12 @@ def apply_project_updates(
             or compact_text(latest.get("today_result"))
             or "부서 입력 완료"
         )
+        latest_status = str(latest.get("status") or project.status)
         merged.append(
             replace(
                 project,
-                status=str(latest.get("status") or project.status),
-                progress_pct=int(round(float(latest.get("progress_pct") or 0))),
+                status=latest_status,
+                progress_pct=stage_progress_pct(project.project_id, latest_status),
                 latest_update=latest_summary,
                 issue=compact_text(latest.get("issue_text"), 96) or "특이사항 없음",
                 budget_status=str(latest.get("budget_status") or project.budget_status),
@@ -2491,18 +2575,10 @@ def display_group_actual_text(
 
 
 def display_metric_groups(project: EmergencyProject) -> list[tuple[str, str, str, str, bool]]:
-    grouped = DISPLAY_METRIC_GROUPS.get(project.project_id)
-    if grouped:
-        rows: list[tuple[str, str, str, str, bool]] = []
-        for label, metric_ids, target_text, unit_text in grouped:
-            current_text, waiting = display_group_actual_text(project, tuple(metric_ids))
-            rows.append((label, target_text, unit_text, current_text, waiting))
-        return rows
-    rows = []
-    for metric in list(project_metrics(project.project_id))[:2]:
-        current = metric_current(project, metric)
-        current_text = format_metric_value(current, metric.unit, compact=True)
-        rows.append((metric.label, metric.target_text, metric.unit, current_text, current is None))
+    rows: list[tuple[str, str, str, str, bool]] = []
+    for label, metric_ids, target_text, unit_text in display_metric_specs(project.project_id):
+        current_text, waiting = display_group_actual_text(project, metric_ids)
+        rows.append((label, target_text, unit_text, current_text, waiting))
     return rows
 
 
@@ -2572,6 +2648,7 @@ def display_stage_points_html(project: EmergencyProject) -> str:
 def display_project_card(project: EmergencyProject) -> str:
     title = DISPLAY_PROJECT_TITLES.get(project.project_id, project.title)
     progress = max(0.0, min(float(project.progress_pct), 100.0))
+    achievement = display_achievement_pct(project)
     field_group = PROJECT_FIELD_GROUPS.get(project.project_id, project.field)
     field_class = PROJECT_FIELD_CLASSES.get(field_group, "field-default")
     return f"""
@@ -2581,10 +2658,10 @@ def display_project_card(project: EmergencyProject) -> str:
           <b>{safe_text(field_group)}</b>
         </div>
         <h3>{safe_text(title)}</h3>
-        <div class="display-card-gauge" style="--pct:{progress:.2f}; --arc-deg:{max(progress, 12.0) * 1.8:.2f}deg;">
+        <div class="display-card-gauge" style="--pct:{achievement:.2f}; --arc-deg:{max(achievement, 12.0) * 1.8:.2f}deg;">
           <div class="display-card-gauge-value">
             <span>달성률(%)</span>
-            <strong>{progress:.1f}</strong>
+            <strong>{achievement:.1f}</strong>
           </div>
         </div>
         <div class="display-card-metrics">
@@ -2950,12 +3027,9 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
                 if risk_default in RISK_LEVEL_OPTIONS
                 else 0,
             )
-        progress_pct = st.number_input(
-            "추진률(%)",
-            min_value=0.0,
-            max_value=100.0,
-            value=float(latest.get("progress_pct") or 0),
-            step=1.0,
+        progress_pct = stage_progress_pct(selected_project_id, status)
+        st.caption(
+            f"추진률은 하단 추진상황 단계 기준으로 자동 산정됩니다. 현재 선택값: {progress_pct}%"
         )
         st.markdown("##### 정량 실적")
         st.caption("금액 지표는 만원 단위로 입력합니다. 상황판에서는 억원·조원 단위로 자동 변환됩니다.")
