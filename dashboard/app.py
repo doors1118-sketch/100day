@@ -343,9 +343,9 @@ PROJECT_STAGE_MAP: dict[str, tuple[str, ...]] = {
     "P004": ("QR 확대", "시스템 개발", "추경확보", "조례개정", "수수료 감면"),
     "P005": ("하반기 계획", "추경확보", "정책발표", "캐시백 적용"),
     "P006": ("사업계획", "추경확보", "조례개정", "쿠폰 발급", "쿠폰 사용"),
-    "P007": ("공실 DB 구축", "건물주 협약", "입주자 선정", "점포 조성", "운영"),
+    "P007": ("DB 구축", "건물주 협약", "입주자 선정", "점포 조성", "운영"),
     "P008": ("수요기관 발굴", "추경확보", "참여자 선발", "일자리 운영"),
-    "P009": ("MOU 체결", "전문인력 모집", "이동상담", "신청지원", "후속조치"),
+    "P009": ("MOU 체결", "인력 모집", "이동상담", "신청지원", "후속조치"),
     "P010": ("TF 구성", "특사경 지명", "수사공조", "팀 신설", "단속·수사"),
 }
 
@@ -7630,14 +7630,14 @@ def inject_css() -> None:
         .display-card-progress-panel {
           margin-top: auto;
           padding: 7px 8px 6px;
-          border: 1px solid #d6e7f7;
+          border: 1px solid #b8d6f3;
           border-radius: 9px;
           background:
-            linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(231, 243, 255, 0.92)),
-            color-mix(in srgb, var(--accent) 8%, #edf7ff);
+            linear-gradient(135deg, rgba(228, 241, 255, 0.98), rgba(199, 224, 249, 0.96)),
+            color-mix(in srgb, var(--accent) 14%, #d9ecff);
           box-shadow:
-            0 6px 16px rgba(28, 81, 140, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            0 8px 18px rgba(28, 81, 140, 0.14),
+            inset 0 1px 0 rgba(255, 255, 255, 0.84);
         }
 
         .display-card-foot {
@@ -7660,21 +7660,26 @@ def inject_css() -> None:
         }
 
         .display-card-meta p {
-          grid-template-columns: 38px minmax(0, 1fr);
-          gap: 7px;
-          font-size: 10px;
+          grid-template-columns: 48px minmax(0, 1fr);
+          gap: 5px;
+          font-size: 9.4px;
           line-height: 1.18;
         }
 
         .display-card-meta span {
-          color: #7e8798;
-          font-weight: 900;
+          color: #34577e;
+          font-weight: 950;
+          white-space: nowrap;
         }
 
         .display-card-meta b {
-          color: #07142b;
+          color: #061b3b;
           font-weight: 950;
-          -webkit-line-clamp: 2;
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          -webkit-line-clamp: unset;
         }
 
         .display-card-mini-gauge {
