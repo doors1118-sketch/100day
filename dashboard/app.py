@@ -346,7 +346,7 @@ PROJECT_STAGE_MAP: dict[str, tuple[str, ...]] = {
     "P007": ("DB 구축", "건물주 협약", "입주자 선정", "점포 조성", "운영"),
     "P008": ("수요기관 발굴", "추경확보", "참여자 선발", "일자리 운영"),
     "P009": ("MOU 체결", "인력 모집", "이동상담", "신청지원", "후속조치"),
-    "P010": ("TF 구성", "특사경 지명", "수사공조", "팀 신설", "단속·수사"),
+    "P010": ("TF 구성", "특사경 지명", "팀 신설", "단속·수사"),
 }
 
 
@@ -7536,6 +7536,7 @@ def inject_css() -> None:
         .display-card-metrics {
           gap: 5px;
           margin-top: 0;
+          margin-bottom: 10px;
         }
 
         .display-metric-row {
