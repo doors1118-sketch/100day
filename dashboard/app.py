@@ -2590,17 +2590,19 @@ def display_project_card(project: EmergencyProject) -> str:
         <div class="display-card-metrics">
           {display_metric_rows_html(project)}
         </div>
-        <div class="display-card-foot">
-          <div class="display-card-meta">
-            <p><span>예산</span><b>{safe_text(project.budget)}</b></p>
-            <p><span>담당부서</span><b>{safe_text(project.department)}</b></p>
+        <div class="display-card-progress-panel">
+          <div class="display-card-foot">
+            <div class="display-card-meta">
+              <p><span>예산</span><b>{safe_text(project.budget)}</b></p>
+              <p><span>담당부서</span><b>{safe_text(project.department)}</b></p>
+            </div>
+            <div class="display-card-mini-gauge" style="--pct:{progress:.2f}; --arc-deg:{max(progress, 12.0) * 1.8:.2f}deg;">
+              <span>진행률</span>
+              <strong>{progress:.0f}%</strong>
+            </div>
           </div>
-          <div class="display-card-mini-gauge" style="--pct:{progress:.2f}; --arc-deg:{max(progress, 12.0) * 1.8:.2f}deg;">
-            <span>진행률</span>
-            <strong>{progress:.0f}%</strong>
-          </div>
+          {display_stage_points_html(project)}
         </div>
-        {display_stage_points_html(project)}
       </article>
     """
 
@@ -7423,36 +7425,51 @@ def inject_css() -> None:
         }
 
         .display-hero {
-          min-height: 176px;
-          grid-template-columns: minmax(620px, 1fr) minmax(360px, 460px) 250px;
-          padding: 24px 48px 0;
+          min-height: 152px;
+          grid-template-columns: minmax(560px, 1fr) minmax(320px, 420px) 250px;
+          padding: 14px 48px 0;
         }
 
         .display-hero-copy h1 {
-          font-size: clamp(44px, 4.0vw, 68px);
+          font-size: clamp(36px, 3.25vw, 56px);
+          line-height: 1.04;
           letter-spacing: -0.055em;
         }
 
         .display-dday-card {
-          width: 212px;
-          height: 72px;
-          font-size: 46px;
+          width: 176px;
+          height: 56px;
+          font-size: 36px;
+        }
+
+        .display-hero-progress {
+          min-height: 128px;
+          grid-template-columns: 104px minmax(0, 1fr);
+          padding-bottom: 10px;
+        }
+
+        .display-overall-label {
+          font-size: 14px;
         }
 
         .display-overall-gauge {
-          width: 300px;
-          height: 150px;
-          min-width: 300px;
-          min-height: 150px;
+          width: 250px;
+          height: 125px;
+          min-width: 250px;
+          min-height: 125px;
         }
 
         .display-overall-gauge strong {
-          bottom: 14px;
-          font-size: 50px;
+          bottom: 12px;
+          font-size: 42px;
+        }
+
+        .display-hero-brand {
+          margin-top: 30px;
         }
 
         .display-card-zone {
-          padding: 34px 48px 28px;
+          padding: 28px 48px 22px;
         }
 
         .display-project-grid {
@@ -7605,19 +7622,32 @@ def inject_css() -> None:
 
         .display-metric-values b.is-waiting {
           color: #09083b;
-          font-size: 16px;
+          font-size: 13px;
           line-height: 1;
-          letter-spacing: -0.07em;
+          letter-spacing: -0.04em;
+        }
+
+        .display-card-progress-panel {
+          margin-top: auto;
+          padding: 7px 8px 6px;
+          border: 1px solid #d6e7f7;
+          border-radius: 9px;
+          background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(231, 243, 255, 0.92)),
+            color-mix(in srgb, var(--accent) 8%, #edf7ff);
+          box-shadow:
+            0 6px 16px rgba(28, 81, 140, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9);
         }
 
         .display-card-foot {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 56px;
-          gap: 10px;
+          grid-template-columns: minmax(0, 1fr) 50px;
+          gap: 8px;
           align-items: center;
-          margin-top: 8px;
-          padding-top: 10px;
-          border-top: 2px solid #e2ebf5;
+          margin-top: 0;
+          padding-top: 0;
+          border-top: 0;
         }
 
         .display-card-meta {
@@ -7649,11 +7679,15 @@ def inject_css() -> None:
 
         .display-card-mini-gauge {
           position: relative;
-          width: 54px;
-          height: 54px;
+          width: 50px;
+          height: 50px;
           border-radius: 50%;
-          display: grid;
-          place-items: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 1px;
+          text-align: center;
           background:
             conic-gradient(var(--accent) 0deg, var(--accent-2) calc(var(--pct) * 3.6deg), #eaf1fb calc(var(--pct) * 3.6deg), #eaf1fb 360deg);
         }
@@ -7661,7 +7695,7 @@ def inject_css() -> None:
         .display-card-mini-gauge::after {
           content: "";
           position: absolute;
-          inset: 8px;
+          inset: 7px;
           border-radius: 50%;
           background: #fff;
         }
@@ -7676,21 +7710,22 @@ def inject_css() -> None:
 
         .display-card-mini-gauge span {
           color: #7d8798;
-          font-size: 8px;
+          font-size: 7.5px;
           font-weight: 900;
           line-height: 1;
         }
 
         .display-card-mini-gauge strong {
-          margin-top: 1px;
+          margin-top: 0;
           color: #120a58;
-          font-size: 18px;
+          font-size: 17px;
           font-weight: 950;
-          line-height: 1;
+          line-height: 0.98;
         }
 
         .display-stage-track {
-          padding-top: 12px;
+          margin-top: 6px;
+          padding-top: 9px;
         }
 
         .display-stage-line {
