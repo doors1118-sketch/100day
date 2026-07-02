@@ -402,8 +402,8 @@ DISPLAY_PROJECT_TITLES = {
 
 DISPLAY_METRIC_GROUPS = {
     "P003": (
-        ("유가연동보조금 지급액", ("fuel_subsidy_amount",), "400억원", "만원"),
-        ("차량보험료 지원액/대수", ("truck_insurance_amount", "truck_insurance_vehicles"), "60억원 / 30,000대", "만원, 대"),
+        ("유가보조금(유가연동보조금 포함) 지급액", ("fuel_subsidy_amount",), "400억원", "만원"),
+        ("차량보험료 지원대수", ("truck_insurance_vehicles",), "30,000대", "대"),
     ),
     "P006": (
         ("공공배달 쿠폰 지급액", ("delivery_coupon_amount",), "60억원", "만원"),
@@ -422,9 +422,8 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
         ProjectMetric("voucher_places", "바우처 지급 개소", "개소", 280_000, "28만개소"),
     ),
     "P003": (
-        ProjectMetric("fuel_subsidy_amount", "유가연동보조금 지급액", "만원", 4_000_000, "400억원", True),
-        ProjectMetric("truck_insurance_amount", "차량보험료 지원액", "만원", 600_000, "60억원"),
-        ProjectMetric("truck_insurance_vehicles", "차량보험료 지원 대수", "대", 30_000, "30,000대"),
+        ProjectMetric("fuel_subsidy_amount", "유가보조금(유가연동보조금 포함) 지급액", "만원", 4_000_000, "400억원", True),
+        ProjectMetric("truck_insurance_vehicles", "차량보험료 지원대수", "대", 30_000, "30,000대"),
         ProjectMetric("accident_insurance_amount", "플랫폼 노동자 산재보험료 지원액", "만원", 80_000, "8억원"),
         ProjectMetric("accident_insurance_people", "플랫폼 노동자 산재보험료 지원 인원", "명", 4_000, "4,000명"),
     ),
