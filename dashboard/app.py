@@ -2278,7 +2278,7 @@ def render_project_card(project: EmergencyProject) -> str:
     issue_markup = (
         f"""
         <div class="project-milestone project-issue">
-          <span>쟁점·애로사항</span>
+          <span>추진상 문제점</span>
           <strong>{safe_text(project.issue)}</strong>
         </div>
         """
@@ -2368,7 +2368,7 @@ def compact_hover_detail_html(project: EmergencyProject) -> str:
     issue_markup = (
         f"""
         <div class="project-hover-text">
-          <span>쟁점·애로사항</span>
+          <span>추진상 문제점</span>
           <strong>{safe_text(project.issue)}</strong>
         </div>
         """
@@ -2723,17 +2723,19 @@ def display_card_detail_popover_html(
             {"".join(metric_rows)}
           </div>
         </div>
-        <div class="display-detail-section">
-          <h4>금일 추진사항</h4>
-          <p>{safe_text(today_result)}</p>
-        </div>
-        <div class="display-detail-section">
-          <h4>향후계획</h4>
-          <p>{safe_text(next_plan)}</p>
-        </div>
-        <div class="display-detail-section">
-          <h4>쟁점·애로사항</h4>
-          <p>{safe_text(issue_text)}</p>
+        <div class="display-detail-text-grid">
+          <div class="display-detail-section">
+            <h4>금일 추진사항</h4>
+            <p>{safe_text(today_result)}</p>
+          </div>
+          <div class="display-detail-section">
+            <h4>추진상 문제점</h4>
+            <p>{safe_text(issue_text)}</p>
+          </div>
+          <div class="display-detail-section">
+            <h4>향후 추진계획</h4>
+            <p>{safe_text(next_plan)}</p>
+          </div>
         </div>
       </div>
     """
@@ -3015,8 +3017,8 @@ def project_history_table(updates: pd.DataFrame, projects: list[EmergencyProject
             "risk_level": "위험도",
             "budget_status": "상태",
             "today_result": "금일 추진사항",
-            "next_plan": "향후계획",
-            "issue_text": "쟁점·애로사항",
+            "next_plan": "향후 추진계획",
+            "issue_text": "추진상 문제점",
             "public_summary": "공개 요약",
         }
     )
@@ -3029,8 +3031,8 @@ def project_history_table(updates: pd.DataFrame, projects: list[EmergencyProject
             "위험도",
             "상태",
             "금일 추진사항",
-            "향후계획",
-            "쟁점·애로사항",
+            "추진상 문제점",
+            "향후 추진계획",
             "입력부서",
             "입력자",
         ]
@@ -3155,17 +3157,17 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
             height=110,
             placeholder="오늘 처리한 협의, 예산 작업, 신청·접수, 지급실적, 현장 조치 등을 입력",
         )
-        next_plan = st.text_area(
-            "향후계획",
-            value=str(latest.get("next_plan") or ""),
-            height=90,
-            placeholder="다음 조치 일정, 추가 협의, 보완 계획 등을 입력",
-        )
         issue_text = st.text_area(
-            "쟁점·애로사항",
+            "추진상 문제점",
             value=str(latest.get("issue_text") or ""),
             height=90,
             placeholder="예산, 조례, 기관협의, 민원, 일정 지연 등 점검 필요 사항",
+        )
+        next_plan = st.text_area(
+            "향후 추진계획",
+            value=str(latest.get("next_plan") or ""),
+            height=90,
+            placeholder="다음 조치 일정, 추가 협의, 보완 계획 등을 입력",
         )
         public_summary = st.text_input(
             "상황판 공개 요약",
@@ -7674,9 +7676,9 @@ def inject_css() -> None:
           z-index: 9999;
           left: 50%;
           top: 50%;
-          width: min(940px, 54vw);
-          min-height: 46vh;
-          max-height: 68vh;
+          width: min(1280px, 78vw);
+          min-height: 52vh;
+          max-height: 82vh;
           padding: 26px 30px 28px;
           overflow: auto;
           border: 1px solid #c9ddf1;
@@ -7772,6 +7774,17 @@ def inject_css() -> None:
           margin-top: 14px;
         }
 
+        .display-detail-text-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+          margin-top: 14px;
+        }
+
+        .display-detail-text-grid .display-detail-section {
+          margin-top: 0;
+        }
+
         .display-detail-section h4 {
           margin: 0 0 8px;
           color: #07142b;
@@ -7790,6 +7803,12 @@ def inject_css() -> None:
           font-weight: 800;
           line-height: 1.52;
           white-space: pre-wrap;
+        }
+
+        .display-detail-text-grid .display-detail-section > p {
+          min-height: 110px;
+          max-height: 180px;
+          overflow: auto;
         }
 
         .display-detail-metrics {
