@@ -402,8 +402,14 @@ DISPLAY_PROJECT_TITLES = {
 
 DISPLAY_METRIC_GROUPS = {
     "P003": (
-        ("유가보조금(유가연동보조금 포함) 지급액", ("fuel_subsidy_amount",), "400억원", "만원"),
-        ("차량보험료 지원대수", ("truck_insurance_vehicles",), "30,000대", "대"),
+        ("유가연동보조금(유가보조금 포함) 지급액", ("fuel_subsidy_amount",), "400억원", "만원"),
+        (
+            "차량보험료 지원대수",
+            ("truck_insurance_vehicles_triport", "truck_insurance_vehicles_jobs"),
+            "30,000대",
+            "대",
+            30_000,
+        ),
     ),
     "P006": (
         ("공공배달 쿠폰 지급액", ("delivery_coupon_amount",), "60억원", "만원"),
@@ -422,8 +428,21 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
         ProjectMetric("voucher_places", "바우처 지급 개소", "개소", 280_000, "28만개소"),
     ),
     "P003": (
-        ProjectMetric("fuel_subsidy_amount", "유가보조금(유가연동보조금 포함) 지급액", "만원", 4_000_000, "400억원", True),
-        ProjectMetric("truck_insurance_vehicles", "차량보험료 지원대수", "대", 30_000, "30,000대"),
+        ProjectMetric("fuel_subsidy_amount", "유가연동보조금(유가보조금 포함) 지급액", "만원", 4_000_000, "400억원", True),
+        ProjectMetric(
+            "truck_insurance_vehicles_triport",
+            "차량보험료 지원대수(트라이포트기획과)",
+            "대",
+            None,
+            "부서별 확인 필요",
+        ),
+        ProjectMetric(
+            "truck_insurance_vehicles_jobs",
+            "차량보험료 지원대수(일자리노동과)",
+            "대",
+            None,
+            "부서별 확인 필요",
+        ),
         ProjectMetric("accident_insurance_amount", "플랫폼 노동자 산재보험료 지원액", "만원", 80_000, "8억원"),
         ProjectMetric("accident_insurance_people", "플랫폼 노동자 산재보험료 지원 인원", "명", 4_000, "4,000명"),
     ),
@@ -459,6 +478,11 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
         ProjectMetric("tf_staff_count", "1단계 TF 구성 인원", "명", 2, "2명(7월~)", True),
         ProjectMetric("formal_team_staff_count", "2단계 민생경제수사팀 신설 인원", "명", 6, "총 6명(9~10월)"),
     ),
+}
+
+
+METRIC_VALUE_ALIASES: dict[str, tuple[str, ...]] = {
+    "truck_insurance_vehicles_triport": ("truck_insurance_vehicles",),
 }
 
 
@@ -2028,8 +2052,19 @@ def parse_quantitative_results(value: Any) -> dict[str, float]:
     return results
 
 
+def quantitative_value(results: dict[str, float], metric_id: str) -> float | None:
+    value = results.get(metric_id)
+    if value is not None:
+        return value
+    for alias in METRIC_VALUE_ALIASES.get(metric_id, ()):
+        value = results.get(alias)
+        if value is not None:
+            return value
+    return None
+
+
 def metric_current(project: EmergencyProject, metric: ProjectMetric) -> float | None:
-    value = project.quantitative_results.get(metric.metric_id)
+    value = quantitative_value(project.quantitative_results, metric.metric_id)
     if value is None:
         return None
     return float(value)
@@ -2070,7 +2105,33 @@ def metric_sum_pct(project: EmergencyProject, metric_ids: tuple[str, ...]) -> fl
     return metric_pct(current_total, target_total)
 
 
-def metric_group_pct(project: EmergencyProject, metric_ids: tuple[str, ...]) -> float | None:
+def metric_group_sum_pct(
+    project: EmergencyProject, metric_ids: tuple[str, ...], target_value: float | None
+) -> float | None:
+    if target_value is None or target_value <= 0:
+        return None
+    metric_map = {metric.metric_id: metric for metric in project_metrics(project.project_id)}
+    current_total = 0.0
+    units: set[str] = set()
+    has_metric = False
+    for metric_id in metric_ids:
+        metric = metric_map.get(metric_id)
+        if metric is None:
+            continue
+        has_metric = True
+        current_total += metric_current(project, metric) or 0.0
+        units.add(metric.unit)
+    if not has_metric or len(units) != 1:
+        return None
+    return metric_pct(current_total, target_value)
+
+
+def metric_group_pct(
+    project: EmergencyProject, metric_ids: tuple[str, ...], target_value: float | None = None
+) -> float | None:
+    summed_pct = metric_group_sum_pct(project, metric_ids, target_value)
+    if summed_pct is not None:
+        return summed_pct
     summed_pct = metric_sum_pct(project, metric_ids)
     if summed_pct is not None:
         return summed_pct
@@ -2084,15 +2145,17 @@ def metric_group_pct(project: EmergencyProject, metric_ids: tuple[str, ...]) -> 
     return sum(pcts) / len(pcts)
 
 
-def display_metric_specs(project_id: str) -> list[tuple[str, tuple[str, ...], str, str]]:
+def display_metric_specs(project_id: str) -> list[tuple[str, tuple[str, ...], str, str, float | None]]:
     grouped = DISPLAY_METRIC_GROUPS.get(project_id)
     if grouped:
-        return [
-            (label, tuple(metric_ids), target_text, unit_text)
-            for label, metric_ids, target_text, unit_text in grouped
-        ]
+        specs: list[tuple[str, tuple[str, ...], str, str, float | None]] = []
+        for group in grouped:
+            label, metric_ids, target_text, unit_text, *rest = group
+            target_value = float(rest[0]) if rest and rest[0] is not None else None
+            specs.append((label, tuple(metric_ids), target_text, unit_text, target_value))
+        return specs
     return [
-        (metric.label, (metric.metric_id,), metric.target_text, metric.unit)
+        (metric.label, (metric.metric_id,), metric.target_text, metric.unit, None)
         for metric in list(project_metrics(project_id))[:2]
     ]
 
@@ -2101,16 +2164,18 @@ def display_achievement_pct(project: EmergencyProject) -> float:
     specs = display_metric_specs(project.project_id)
     metric_ids = tuple(
         metric_id
-        for _label, spec_metric_ids, _target_text, _unit_text in specs
+        for _label, spec_metric_ids, _target_text, _unit_text, _target_value in specs
         for metric_id in spec_metric_ids
     )
-    summed_pct = metric_sum_pct(project, metric_ids)
-    if summed_pct is not None:
-        return summed_pct
+    has_custom_target = any(target_value is not None for *_unused, target_value in specs)
+    if not has_custom_target:
+        summed_pct = metric_sum_pct(project, metric_ids)
+        if summed_pct is not None:
+            return summed_pct
     group_pcts = [
         pct
-        for _label, spec_metric_ids, _target_text, _unit_text in specs
-        if (pct := metric_group_pct(project, spec_metric_ids)) is not None
+        for _label, spec_metric_ids, _target_text, _unit_text, target_value in specs
+        if (pct := metric_group_pct(project, spec_metric_ids, target_value)) is not None
     ]
     if not group_pcts:
         return 0.0
@@ -2573,6 +2638,14 @@ def display_group_actual_text(
     project: EmergencyProject, metric_ids: tuple[str, ...]
 ) -> tuple[str, bool]:
     metric_map = {metric.metric_id: metric for metric in project_metrics(project.project_id)}
+    group_metrics = [metric_map[metric_id] for metric_id in metric_ids if metric_id in metric_map]
+    if len(group_metrics) > 1 and len({metric.unit for metric in group_metrics}) == 1:
+        has_value = any(metric_current(project, metric) is not None for metric in group_metrics)
+        if not has_value:
+            return "입력 대기", True
+        current_total = sum(metric_current(project, metric) or 0.0 for metric in group_metrics)
+        return format_metric_value(current_total, group_metrics[0].unit, compact=True), False
+
     values: list[str] = []
     has_value = False
     for metric_id in metric_ids:
@@ -2592,7 +2665,7 @@ def display_group_actual_text(
 
 def display_metric_groups(project: EmergencyProject) -> list[tuple[str, str, str, str, bool]]:
     rows: list[tuple[str, str, str, str, bool]] = []
-    for label, metric_ids, target_text, unit_text in display_metric_specs(project.project_id):
+    for label, metric_ids, target_text, unit_text, _target_value in display_metric_specs(project.project_id):
         current_text, waiting = display_group_actual_text(project, metric_ids)
         rows.append((label, target_text, unit_text, current_text, waiting))
     return rows
@@ -3138,7 +3211,7 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
                 cols = st.columns(2)
                 for col, metric in zip(cols, metric_list[idx : idx + 2]):
                     with col:
-                        default_value = float(latest_quantitative.get(metric.metric_id, 0.0))
+                        default_value = float(quantitative_value(latest_quantitative, metric.metric_id) or 0.0)
                         quantitative_results[metric.metric_id] = float(
                             st.number_input(
                                 f"{metric.label} ({metric.unit})",
