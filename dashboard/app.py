@@ -130,6 +130,7 @@ def load_project_updates() -> pd.DataFrame:
                 pu.progress_pct,
                 pu.risk_level,
                 pu.budget_status,
+                pu.stage_statuses,
                 pu.quantitative_results,
                 pu.today_result,
                 pu.next_plan,
@@ -221,6 +222,7 @@ class EmergencyProject:
     next_plan: str = ""
     updated_at: str = ""
     quantitative_results: dict[str, float] = field(default_factory=dict)
+    stage_statuses: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -348,6 +350,20 @@ PROJECT_STAGE_MAP: dict[str, tuple[str, ...]] = {
     "P008": ("수요기관 발굴", "추경확보", "참여자 선발", "일자리 운영"),
     "P009": ("MOU 체결", "이동상담", "원스톱 서비스", "후속조치"),
     "P010": ("TF 구성", "특사경 지명", "팀 신설", "단속·수사"),
+}
+
+STAGE_STATE_OPTIONS = ("준비중", "추진중", "추진완료", "취소")
+STAGE_STATE_WEIGHTS = {
+    "준비중": 0.0,
+    "추진중": 0.5,
+    "추진완료": 1.0,
+    "취소": 0.0,
+}
+STAGE_STATE_CLASSES = {
+    "준비중": "is-ready",
+    "추진중": "is-active",
+    "추진완료": "is-done",
+    "취소": "is-cancelled",
 }
 
 
@@ -601,6 +617,7 @@ def ensure_admin_schema() -> None:
                 progress_pct REAL NOT NULL,
                 risk_level TEXT NOT NULL,
                 budget_status TEXT NOT NULL,
+                stage_statuses TEXT,
                 quantitative_results TEXT,
                 today_result TEXT,
                 next_plan TEXT,
@@ -621,6 +638,8 @@ def ensure_admin_schema() -> None:
         }
         if "quantitative_results" not in project_update_columns:
             conn.execute("ALTER TABLE project_updates ADD COLUMN quantitative_results TEXT")
+        if "stage_statuses" not in project_update_columns:
+            conn.execute("ALTER TABLE project_updates ADD COLUMN stage_statuses TEXT")
         user_count = conn.execute("SELECT COUNT(*) FROM admin_users").fetchone()[0]
         initial_password = os.getenv("MINSAENG_ADMIN_PASSWORD", "").strip()
         if user_count == 0 and initial_password:
@@ -2050,6 +2069,86 @@ def stage_progress_pct(project_id: str, status: str) -> int:
     return int(round(((stages.index(status) + 1) / len(stages)) * 100))
 
 
+def normalize_stage_state(value: Any) -> str:
+    state = "" if value is None or pd.isna(value) else str(value).strip()
+    return state if state in STAGE_STATE_OPTIONS else "준비중"
+
+
+def sequential_stage_statuses(project_id: str, status: str) -> dict[str, str]:
+    stages = project_stages(project_id)
+    stage_statuses = {stage: "준비중" for stage in stages}
+    if status not in stages:
+        return stage_statuses
+    current_index = stages.index(status)
+    for idx, stage in enumerate(stages):
+        if idx < current_index:
+            stage_statuses[stage] = "추진완료"
+        elif idx == current_index:
+            stage_statuses[stage] = "추진중"
+    return stage_statuses
+
+
+def parse_stage_statuses(
+    value: Any,
+    project_id: str,
+    fallback_status: str = "",
+) -> dict[str, str]:
+    stages = project_stages(project_id)
+    if not stages:
+        return {}
+    raw: dict[str, Any] = {}
+    if isinstance(value, dict):
+        raw = value
+    elif isinstance(value, str) and value.strip():
+        try:
+            parsed = json.loads(value)
+            if isinstance(parsed, dict):
+                raw = parsed
+        except json.JSONDecodeError:
+            raw = {}
+    if not raw:
+        return sequential_stage_statuses(project_id, fallback_status)
+    return {stage: normalize_stage_state(raw.get(stage)) for stage in stages}
+
+
+def stage_status_class(stage_state: str) -> str:
+    return STAGE_STATE_CLASSES.get(normalize_stage_state(stage_state), "is-ready")
+
+
+def stage_status_progress_pct(project_id: str, stage_statuses: dict[str, str]) -> int:
+    stages = project_stages(project_id)
+    if not stages:
+        return 0
+    score = 0.0
+    for stage in stages:
+        score += STAGE_STATE_WEIGHTS.get(normalize_stage_state(stage_statuses.get(stage)), 0.0)
+    return int(round((score / len(stages)) * 100))
+
+
+def representative_stage_status(project_id: str, stage_statuses: dict[str, str], fallback: str = "") -> str:
+    stages = project_stages(project_id)
+    if not stages:
+        return fallback or "준비중"
+    for stage in stages:
+        if normalize_stage_state(stage_statuses.get(stage)) == "추진중":
+            return stage
+    completed = [
+        stage
+        for stage in stages
+        if normalize_stage_state(stage_statuses.get(stage)) == "추진완료"
+    ]
+    if completed:
+        return completed[-1]
+    cancelled = [
+        stage
+        for stage in stages
+        if normalize_stage_state(stage_statuses.get(stage)) == "취소"
+    ]
+    if cancelled:
+        return cancelled[0]
+    return fallback if fallback in stages else stages[0]
+
+
 def project_metrics(project_id: str) -> tuple[ProjectMetric, ...]:
     return PROJECT_METRIC_MAP.get(project_id, ())
 
@@ -2344,11 +2443,21 @@ def apply_project_updates(
             latest.get("budget_status") or project.budget_status
         )
         latest_risk_level = normalize_risk_level(latest.get("risk_level") or project.risk_level)
+        latest_stage_statuses = parse_stage_statuses(
+            latest.get("stage_statuses"),
+            project.project_id,
+            latest_status,
+        )
+        representative_status = representative_stage_status(
+            project.project_id,
+            latest_stage_statuses,
+            latest_status,
+        )
         merged.append(
             replace(
                 project,
-                status=latest_status,
-                progress_pct=stage_progress_pct(project.project_id, latest_status),
+                status=representative_status,
+                progress_pct=stage_status_progress_pct(project.project_id, latest_stage_statuses),
                 latest_update=latest_summary,
                 today_result=compact_text(latest.get("today_result"), 320),
                 issue=compact_text(latest.get("issue_text"), 320) or "특이사항 없음",
@@ -2359,26 +2468,27 @@ def apply_project_updates(
                 quantitative_results=parse_quantitative_results(
                     latest.get("quantitative_results")
                 ),
+                stage_statuses=latest_stage_statuses,
             )
         )
     return merged
 
 
-def stage_html(project_id: str, current_status: str) -> str:
+def stage_html(
+    project_id: str,
+    current_status: str,
+    stage_statuses: dict[str, str] | None = None,
+) -> str:
     pieces = []
     stages = project_stages(project_id)
-    try:
-        current_index = stages.index(current_status)
-    except ValueError:
-        current_index = -1
-    for idx, label in enumerate(stages):
-        class_names = []
-        if idx < current_index:
-            class_names.append("is-done")
-        if idx == current_index:
-            class_names.append("is-current")
-        class_attr = " ".join(class_names)
-        pieces.append(f'<span class="{class_attr}">{safe_text(label)}</span>')
+    normalized_statuses = parse_stage_statuses(stage_statuses or {}, project_id, current_status)
+    for label in stages:
+        state = normalize_stage_state(normalized_statuses.get(label))
+        class_attr = stage_status_class(state)
+        pieces.append(
+            f'<span class="{class_attr}" title="{safe_text(label)}: {safe_text(state)}">'
+            f'<b>{safe_text(label)}</b><em>{safe_text(state)}</em></span>'
+        )
     return "\n".join(pieces)
 
 
@@ -2391,7 +2501,7 @@ def risk_class(risk_level: str) -> str:
 
 
 def render_project_card(project: EmergencyProject) -> str:
-    stage_markup = stage_html(project.project_id, project.status)
+    stage_markup = stage_html(project.project_id, project.status, project.stage_statuses)
     metric_markup = metric_panel_html(project)
     risk_markup = f"""
       <span class="project-risk {risk_class(project.risk_level)}">{safe_text(project.risk_level)}</span>
@@ -2462,22 +2572,14 @@ def compact_stage_points_html(project: EmergencyProject) -> str:
     if not stages:
         return ""
     points = list(stages)
-    try:
-        current_index = stages.index(project.status)
-    except ValueError:
-        current_index = -1
+    stage_statuses = parse_stage_statuses(project.stage_statuses, project.project_id, project.status)
     point_items = []
     for label in points:
-        try:
-            stage_index = stages.index(label)
-        except ValueError:
-            stage_index = -1
-        class_names = ["project-compact-step"]
-        if current_index >= 0 and stage_index < current_index:
-            class_names.append("is-done")
-        if current_index >= 0 and stage_index == current_index:
-            class_names.append("is-current")
-        point_items.append(f'<span class="{" ".join(class_names)}">{safe_text(label)}</span>')
+        state = normalize_stage_state(stage_statuses.get(label))
+        class_names = ["project-compact-step", stage_status_class(state)]
+        point_items.append(
+            f'<span class="{" ".join(class_names)}" title="{safe_text(label)}: {safe_text(state)}">{safe_text(label)}</span>'
+        )
     return f"""
       <div class="project-compact-steps" style="--pct:{project.progress_pct};">
         <div class="project-compact-step-track"><span></span></div>
@@ -2489,7 +2591,7 @@ def compact_stage_points_html(project: EmergencyProject) -> str:
 
 
 def compact_hover_detail_html(project: EmergencyProject) -> str:
-    stage_markup = stage_html(project.project_id, project.status)
+    stage_markup = stage_html(project.project_id, project.status, project.stage_statuses)
     metrics_markup = metric_rows_html(project)
     issue_markup = (
         f"""
@@ -2788,18 +2890,14 @@ def display_stage_points_html(project: EmergencyProject) -> str:
     stages = project_stages(project.project_id)
     if not stages:
         return ""
-    try:
-        current_index = stages.index(project.status)
-    except ValueError:
-        current_index = -1
+    stage_statuses = parse_stage_statuses(project.stage_statuses, project.project_id, project.status)
     points: list[str] = []
-    for idx, label in enumerate(stages):
-        classes = ["display-stage-point"]
-        if current_index >= 0 and idx < current_index:
-            classes.append("is-done")
-        if current_index >= 0 and idx == current_index:
-            classes.append("is-current")
-        points.append(f'<span class="{" ".join(classes)}">{safe_text(label)}</span>')
+    for label in stages:
+        state = normalize_stage_state(stage_statuses.get(label))
+        classes = ["display-stage-point", stage_status_class(state)]
+        points.append(
+            f'<span class="{" ".join(classes)}" title="{safe_text(label)}: {safe_text(state)}">{safe_text(label)}</span>'
+        )
     return f"""
       <div class="display-stage-track" style="--pct:{project.progress_pct};">
         <div class="display-stage-line"><span></span></div>
@@ -3040,6 +3138,7 @@ def insert_project_update(
     project_id: str,
     status: str,
     progress_pct: float,
+    stage_statuses: dict[str, str],
     risk_level: str,
     budget_status: str,
     quantitative_results: dict[str, float],
@@ -3053,10 +3152,10 @@ def insert_project_update(
             """
             INSERT INTO project_updates (
                 project_id, status, progress_pct, risk_level, budget_status,
-                quantitative_results, today_result, next_plan, issue_text, public_summary,
+                stage_statuses, quantitative_results, today_result, next_plan, issue_text, public_summary,
                 created_by, created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 project_id,
@@ -3064,6 +3163,7 @@ def insert_project_update(
                 float(progress_pct),
                 risk_level,
                 budget_status,
+                json.dumps(stage_statuses, ensure_ascii=False),
                 json.dumps(quantitative_results, ensure_ascii=False),
                 today_result.strip(),
                 next_plan.strip(),
@@ -3240,21 +3340,39 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
     latest = latest_update_for_project(selected_project_id, updates) or {}
     stage_options = list(project_stages(selected_project_id))
     status_default = str(latest.get("status") or stage_options[0])
+    stage_status_defaults = parse_stage_statuses(
+        latest.get("stage_statuses"),
+        selected_project_id,
+        status_default,
+    )
     budget_default = normalize_budget_status(latest.get("budget_status"))
     risk_default = str(latest.get("risk_level") or "정상")
     latest_quantitative = parse_quantitative_results(latest.get("quantitative_results"))
 
     with st.form("project_update_form", clear_on_submit=False):
-        col1, col2, col3 = st.columns([1, 1, 1])
+        st.markdown("##### 단계별 추진상태")
+        st.caption(
+            "각 단계는 독립적으로 선택합니다. 예: MOU 체결은 준비중, 전산개발은 추진중, 추경확보는 추진완료로 입력할 수 있습니다."
+        )
+        stage_statuses: dict[str, str] = {}
+        stage_cols = st.columns(min(5, max(1, len(stage_options))))
+        for idx, stage in enumerate(stage_options):
+            default_state = normalize_stage_state(stage_status_defaults.get(stage))
+            with stage_cols[idx % len(stage_cols)]:
+                stage_statuses[stage] = st.selectbox(
+                    stage,
+                    STAGE_STATE_OPTIONS,
+                    index=STAGE_STATE_OPTIONS.index(default_state),
+                    key=f"stage_state_{selected_project_id}_{idx}",
+                )
+        status = representative_stage_status(selected_project_id, stage_statuses, status_default)
+        progress_pct = stage_status_progress_pct(selected_project_id, stage_statuses)
+        st.caption(
+            f"진행률은 단계별 상태값으로 자동 산정됩니다. 추진완료=100%, 추진중=50%, 준비중·취소=0%로 계산합니다. 현재 대표 단계: {status} / 진행률: {progress_pct}%"
+        )
+
+        col1, col2 = st.columns([1, 1])
         with col1:
-            status = st.selectbox(
-                "추진상태",
-                stage_options,
-                index=stage_options.index(status_default)
-                if status_default in stage_options
-                else 0,
-            )
-        with col2:
             budget_status = st.selectbox(
                 "상태",
                 BUDGET_STATUS_OPTIONS,
@@ -3262,7 +3380,7 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
                 if budget_default in BUDGET_STATUS_OPTIONS
                 else BUDGET_STATUS_OPTIONS.index("추진중"),
             )
-        with col3:
+        with col2:
             risk_level = st.selectbox(
                 "위험도",
                 RISK_LEVEL_OPTIONS,
@@ -3270,10 +3388,6 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
                 if risk_default in RISK_LEVEL_OPTIONS
                 else 0,
             )
-        progress_pct = stage_progress_pct(selected_project_id, status)
-        st.caption(
-            f"진행률은 상황판 카드 하단의 추진상태 단계 기준으로 자동 산정됩니다. 현재 선택값: {progress_pct}%"
-        )
         st.markdown("##### 정량 실적")
         st.caption("금액 지표는 만원 단위로 입력합니다. 상황판에서는 억원·조원 단위로 자동 변환됩니다.")
         quantitative_results: dict[str, float] = {}
@@ -3326,6 +3440,7 @@ def render_project_update_input(user: dict[str, Any], projects: list[EmergencyPr
             project_id=selected_project_id,
             status=status,
             progress_pct=progress_pct,
+            stage_statuses=stage_statuses,
             risk_level=risk_level,
             budget_status=budget_status,
             quantitative_results=quantitative_results,
@@ -4322,6 +4437,7 @@ def inject_css() -> None:
         .project-stage span {
           min-height: 34px;
           display: inline-flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
           border-radius: 999px;
@@ -4331,9 +4447,32 @@ def inject_css() -> None:
           font-weight: 900;
         }
 
-        .project-stage span.is-current {
+        .project-stage span b {
+          font-size: 12px;
+          line-height: 1.05;
+        }
+
+        .project-stage span em {
+          margin-top: 2px;
+          font-size: 9px;
+          font-style: normal;
+          line-height: 1;
+          opacity: 0.84;
+        }
+
+        .project-stage span.is-done {
           background: #3eeadf;
           color: #062236;
+        }
+
+        .project-stage span.is-active {
+          background: #ffd05a;
+          color: #382500;
+        }
+
+        .project-stage span.is-cancelled {
+          background: #ff6b6b;
+          color: #fff;
         }
 
         .project-check-row {
@@ -4819,11 +4958,17 @@ def inject_css() -> None:
           color: #00796f;
         }
 
-        .project-stage span.is-current {
-          background: #2563eb;
-          border-color: #2563eb;
-          color: #fff;
-          box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+        .project-stage span.is-active {
+          background: #fff2c2;
+          border-color: #f5b400;
+          color: #6b4300;
+          box-shadow: 0 8px 16px rgba(245, 180, 0, 0.18);
+        }
+
+        .project-stage span.is-cancelled {
+          background: #ffecec;
+          border-color: #ff8b8b;
+          color: #b42323;
         }
 
         .project-check-row {
@@ -5711,19 +5856,24 @@ def inject_css() -> None:
           background: #fff;
         }
 
-        .project-compact-step.is-done::before,
-        .project-compact-step.is-current::before {
+        .project-compact-step.is-done::before {
           border-color: #18aaa6;
           background: #18aaa6;
           box-shadow: 0 0 0 3px rgba(24, 170, 166, 0.16);
         }
 
-        .project-compact-step.is-current {
-          color: #003f9e;
+        .project-compact-step.is-active {
+          color: #9a5a00;
           font-weight: 950;
         }
 
-        .project-compact-step.is-current::after {
+        .project-compact-step.is-active::before {
+          border-color: #f5b400;
+          background: #f5b400;
+          box-shadow: 0 0 0 3px rgba(245, 180, 0, 0.22);
+        }
+
+        .project-compact-step.is-active::after {
           content: "";
           position: absolute;
           left: 50%;
@@ -5733,7 +5883,17 @@ def inject_css() -> None:
           transform: translateX(-50%);
           border-left: 5px solid transparent;
           border-right: 5px solid transparent;
-          border-top: 7px solid #0070d2;
+          border-top: 7px solid #f5b400;
+        }
+
+        .project-compact-step.is-cancelled {
+          color: #b42323;
+        }
+
+        .project-compact-step.is-cancelled::before {
+          border-color: #ef4444;
+          background: #ef4444;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
         }
 
         .project-hover-detail {
@@ -5871,16 +6031,32 @@ def inject_css() -> None:
           line-height: 1;
         }
 
+        .project-hover-stage span b {
+          margin-right: 4px;
+        }
+
+        .project-hover-stage span em {
+          font-size: 10px;
+          font-style: normal;
+          opacity: 0.78;
+        }
+
         .project-hover-stage span.is-done {
           border-color: #9fe2df;
           background: #e8fbfa;
           color: #08706f;
         }
 
-        .project-hover-stage span.is-current {
-          border-color: #1aa8a4;
-          background: #1aa8a4;
-          color: #fff;
+        .project-hover-stage span.is-active {
+          border-color: #f5b400;
+          background: #fff2c2;
+          color: #6b4300;
+        }
+
+        .project-hover-stage span.is-cancelled {
+          border-color: #ff8b8b;
+          background: #ffecec;
+          color: #b42323;
         }
 
         .project-hover-status {
@@ -7740,15 +7916,32 @@ def inject_css() -> None:
           box-sizing: border-box;
         }
 
-        .display-stage-point.is-done,
-        .display-stage-point.is-current {
-          color: #0b5eb2;
+        .display-stage-point.is-done {
+          color: #07837d;
         }
 
-        .display-stage-point.is-done::before,
-        .display-stage-point.is-current::before {
+        .display-stage-point.is-done::before {
           border-color: var(--accent);
           background: var(--accent);
+        }
+
+        .display-stage-point.is-active {
+          color: #9a5a00;
+        }
+
+        .display-stage-point.is-active::before {
+          border-color: #f5b400;
+          background: #f5b400;
+          box-shadow: 0 0 0 2px rgba(245, 180, 0, 0.2);
+        }
+
+        .display-stage-point.is-cancelled {
+          color: #b42323;
+        }
+
+        .display-stage-point.is-cancelled::before {
+          border-color: #ef4444;
+          background: #ef4444;
         }
 
         .display-board-page {
@@ -8293,8 +8486,8 @@ def inject_css() -> None:
           color: var(--accent);
         }
 
-        .display-stage-point.is-current {
-          color: #003f9e;
+        .display-stage-point.is-active {
+          color: #9a5a00;
           font-weight: 950;
         }
 
@@ -8306,15 +8499,15 @@ def inject_css() -> None:
           box-shadow: 0 0 0 3px rgba(37, 195, 189, 0.16);
         }
 
-        .display-stage-point.is-current::before {
+        .display-stage-point.is-active::before {
           width: 11px;
           height: 11px;
           border-color: #fff;
-          background: linear-gradient(135deg, var(--accent), var(--accent-2));
-          box-shadow: 0 0 0 4px rgba(0, 112, 210, 0.18);
+          background: #f5b400;
+          box-shadow: 0 0 0 4px rgba(245, 180, 0, 0.2);
         }
 
-        .display-stage-point.is-current::after {
+        .display-stage-point.is-active::after {
           content: "";
           position: absolute;
           left: 50%;
@@ -8324,7 +8517,16 @@ def inject_css() -> None:
           transform: translateX(-50%);
           border-left: 5px solid transparent;
           border-right: 5px solid transparent;
-          border-top: 7px solid var(--accent-2);
+          border-top: 7px solid #f5b400;
+        }
+
+        .display-stage-point.is-cancelled {
+          color: #b42323;
+        }
+
+        .display-stage-point.is-cancelled::before {
+          border-color: #ef4444;
+          background: #ef4444;
         }
 
         div[data-testid="stDataFrame"] {
