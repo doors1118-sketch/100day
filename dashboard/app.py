@@ -2231,6 +2231,18 @@ def display_achievement_pct(project: EmergencyProject) -> float:
     return max(0.0, min(sum(group_pcts) / len(group_pcts), 100.0))
 
 
+def project_combined_progress_pct(project: EmergencyProject) -> float:
+    stage_progress = max(0.0, min(float(project.progress_pct), 100.0))
+    achievement = max(0.0, min(display_achievement_pct(project), 100.0))
+    return round((stage_progress + achievement) / 2, 1)
+
+
+def overall_combined_progress_pct(projects: list[EmergencyProject]) -> float:
+    if not projects:
+        return 0.0
+    return round(sum(project_combined_progress_pct(project) for project in projects) / len(projects), 1)
+
+
 def format_metric_value(value: float | None, unit: str, compact: bool = False) -> str:
     if value is None:
         return "입력 대기"
@@ -2606,11 +2618,7 @@ def render_project_dashboard(projects: list[EmergencyProject]) -> None:
     projects = apply_project_updates(projects, updates)
     budget_projects = [project for project in projects if project.budget != "비예산"]
     updated_project_count = len(latest_project_update_map(updates))
-    avg_progress = (
-        round(sum(project.progress_pct for project in projects) / len(projects), 1)
-        if projects
-        else 0
-    )
+    avg_progress = overall_combined_progress_pct(projects)
     countdown_label, _countdown_status = minsaeng_countdown()
     if countdown_label == "D-DAY":
         countdown_caption = "D-Day"
@@ -2926,11 +2934,7 @@ def display_project_card(project: EmergencyProject) -> str:
 def render_project_display_board(projects: list[EmergencyProject]) -> None:
     updates = load_project_updates()
     projects = apply_project_updates(projects, updates)
-    avg_progress = (
-        round(sum(project.progress_pct for project in projects) / len(projects), 1)
-        if projects
-        else 0.0
-    )
+    avg_progress = overall_combined_progress_pct(projects)
     countdown_label, _countdown_status = minsaeng_countdown()
     display_countdown = countdown_label if countdown_label.startswith("D-") else "D-0"
     cards_html = "\n".join(display_project_card(project) for project in projects)
