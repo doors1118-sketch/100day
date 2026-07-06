@@ -48,6 +48,30 @@ st.set_page_config(
 )
 
 
+def disable_browser_translation() -> None:
+    components.html(
+        """
+        <script>
+        try {
+          const doc = window.parent.document;
+          doc.documentElement.lang = "ko";
+          doc.documentElement.setAttribute("translate", "no");
+          doc.body.classList.add("notranslate");
+          if (!doc.querySelector('meta[name="google"][content="notranslate"]')) {
+            const meta = doc.createElement("meta");
+            meta.name = "google";
+            meta.content = "notranslate";
+            doc.head.appendChild(meta);
+          }
+        } catch (error) {
+          // Streamlit may sandbox component scripts in some deployments.
+        }
+        </script>
+        """,
+        height=0,
+    )
+
+
 @st.cache_data(ttl=300)
 def load_catalog() -> pd.DataFrame:
     with CATALOG_PATH.open("r", encoding="utf-8") as fp:
@@ -9040,6 +9064,7 @@ def section(title: str, caption: str, countdown_label: str | None = None) -> Non
     )
 
 
+disable_browser_translation()
 inject_css()
 ensure_admin_schema()
 
