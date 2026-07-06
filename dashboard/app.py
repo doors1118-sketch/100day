@@ -260,7 +260,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         "화물차주·택배 종사자 등 특별 지원",
         "소상공인 경영개선 지원",
         "트라이포트기획과\n일자리노동과",
-        "466.35억원",
+        "468.45억원",
         "화물차 유가연동보조금 추가 지원, 차량보험료 지원, 배달종사자 산재보험료 지원",
         "2026.6.~7. 관련기관 협의 및 세부계획 수립, 2026.9. 추경 확보 후 홍보·신청접수·지원금 지급",
     ),
@@ -404,16 +404,43 @@ DISPLAY_METRIC_GROUPS = {
     "P003": (
         ("유가연동보조금(유가보조금 포함) 지급액", ("fuel_subsidy_amount",), "400억원", "만원"),
         (
-            "차량보험료 지원대수",
-            ("truck_insurance_vehicles_triport", "truck_insurance_vehicles_jobs"),
-            "30,000대",
-            "대",
-            30_000,
+            "차량보험료·산재보험료 지원대상",
+            ("truck_insurance_vehicles_triport", "truck_insurance_vehicles_jobs", "accident_insurance_people"),
+            "34,000대·명",
+            "대·명",
+            34_000,
         ),
     ),
     "P006": (
         ("공공배달 쿠폰 지급액", ("delivery_coupon_amount",), "60억원", "만원"),
         ("동백전 QR결제 쿠폰/비중", ("qr_coupon_amount", "qr_payment_share"), "20억원 / 14%", "만원, %"),
+    ),
+    "P008": (
+        ("민생지킴이 투입 인원", ("guardian_people_jobs",), "500명", "명"),
+        (
+            "공공일자리 투입 인원",
+            ("public_job_people_senior", "public_job_people_middle_age", "public_job_people_disabled"),
+            "4,850명",
+            "명",
+            4_850,
+        ),
+    ),
+}
+
+
+DETAIL_METRIC_GROUPS = {
+    "P003": (
+        ("유가연동보조금(유가보조금 포함) 지급액", ("fuel_subsidy_amount",), "400억원", "만원"),
+        ("화물자동차 보험료 지원대수(트라이포트기획과)", ("truck_insurance_vehicles_triport",), "부서별 확인 필요", "대"),
+        ("화물자동차 보험료 지원대수(일자리노동과)", ("truck_insurance_vehicles_jobs",), "부서별 확인 필요", "대"),
+        ("플랫폼 노동자 산재보험료 지원 인원", ("accident_insurance_people",), "4,000명", "명"),
+        ("플랫폼 노동자 산재보험료 지원액", ("accident_insurance_amount",), "8.45억원", "만원"),
+    ),
+    "P008": (
+        ("민생지킴이 투입 인원(일자리노동과)", ("guardian_people_jobs",), "500명", "명"),
+        ("공공일자리 투입 인원(노인복지과)", ("public_job_people_senior",), "4,500명", "명"),
+        ("공공일자리 투입 인원(일자리노동과·신중년)", ("public_job_people_middle_age",), "200명", "명"),
+        ("공공일자리 투입 인원(장애인복지과)", ("public_job_people_disabled",), "150명", "명"),
     ),
 }
 
@@ -431,19 +458,19 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
         ProjectMetric("fuel_subsidy_amount", "유가연동보조금(유가보조금 포함) 지급액", "만원", 4_000_000, "400억원", True),
         ProjectMetric(
             "truck_insurance_vehicles_triport",
-            "차량보험료 지원대수(트라이포트기획과)",
+            "화물자동차 보험료 지원대수(트라이포트기획과)",
             "대",
             None,
             "부서별 확인 필요",
         ),
         ProjectMetric(
             "truck_insurance_vehicles_jobs",
-            "차량보험료 지원대수(일자리노동과)",
+            "화물자동차 보험료 지원대수(일자리노동과)",
             "대",
             None,
             "부서별 확인 필요",
         ),
-        ProjectMetric("accident_insurance_amount", "플랫폼 노동자 산재보험료 지원액", "만원", 80_000, "8억원"),
+        ProjectMetric("accident_insurance_amount", "플랫폼 노동자 산재보험료 지원액", "만원", 84_500, "8.45억원"),
         ProjectMetric("accident_insurance_people", "플랫폼 노동자 산재보험료 지원 인원", "명", 4_000, "4,000명"),
     ),
     "P004": (
@@ -467,8 +494,10 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
         ProjectMetric("vacant_store_setup_count", "빈점포 조성 개소", "개소", 50, "50개소"),
     ),
     "P008": (
-        ProjectMetric("guardian_people", "민생지킴이 투입 인원", "명", 500, "500명", True),
-        ProjectMetric("public_job_people", "공공일자리 투입 인원", "명", 4_850, "4,850명"),
+        ProjectMetric("guardian_people_jobs", "민생지킴이 투입 인원(일자리노동과)", "명", 500, "500명", True),
+        ProjectMetric("public_job_people_senior", "공공일자리 투입 인원(노인복지과)", "명", 4_500, "4,500명"),
+        ProjectMetric("public_job_people_middle_age", "공공일자리 투입 인원(일자리노동과·신중년)", "명", 200, "200명"),
+        ProjectMetric("public_job_people_disabled", "공공일자리 투입 인원(장애인복지과)", "명", 150, "150명"),
     ),
     "P009": (
         ProjectMetric("support_cases", "원스톱서비스 지원건수", "건", 200, "200건", True),
@@ -483,6 +512,7 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
 
 METRIC_VALUE_ALIASES: dict[str, tuple[str, ...]] = {
     "truck_insurance_vehicles_triport": ("truck_insurance_vehicles",),
+    "guardian_people_jobs": ("guardian_people",),
 }
 
 
@@ -2145,8 +2175,10 @@ def metric_group_pct(
     return sum(pcts) / len(pcts)
 
 
-def display_metric_specs(project_id: str) -> list[tuple[str, tuple[str, ...], str, str, float | None]]:
-    grouped = DISPLAY_METRIC_GROUPS.get(project_id)
+def metric_specs_from_groups(
+    groups: dict[str, tuple[tuple[Any, ...], ...]], project_id: str
+) -> list[tuple[str, tuple[str, ...], str, str, float | None]]:
+    grouped = groups.get(project_id)
     if grouped:
         specs: list[tuple[str, tuple[str, ...], str, str, float | None]] = []
         for group in grouped:
@@ -2154,9 +2186,26 @@ def display_metric_specs(project_id: str) -> list[tuple[str, tuple[str, ...], st
             target_value = float(rest[0]) if rest and rest[0] is not None else None
             specs.append((label, tuple(metric_ids), target_text, unit_text, target_value))
         return specs
+    return []
+
+
+def display_metric_specs(project_id: str) -> list[tuple[str, tuple[str, ...], str, str, float | None]]:
+    grouped_specs = metric_specs_from_groups(DISPLAY_METRIC_GROUPS, project_id)
+    if grouped_specs:
+        return grouped_specs
     return [
         (metric.label, (metric.metric_id,), metric.target_text, metric.unit, None)
         for metric in list(project_metrics(project_id))[:2]
+    ]
+
+
+def detail_metric_specs(project_id: str) -> list[tuple[str, tuple[str, ...], str, str, float | None]]:
+    grouped_specs = metric_specs_from_groups(DETAIL_METRIC_GROUPS, project_id)
+    if grouped_specs:
+        return grouped_specs
+    return [
+        (metric.label, (metric.metric_id,), metric.target_text, metric.unit, None)
+        for metric in project_metrics(project_id)
     ]
 
 
@@ -2635,10 +2684,21 @@ def display_actual_text(value: float | None, unit: str) -> str:
 
 
 def display_group_actual_text(
-    project: EmergencyProject, metric_ids: tuple[str, ...]
+    project: EmergencyProject,
+    metric_ids: tuple[str, ...],
+    unit_text: str | None = None,
+    target_value: float | None = None,
 ) -> tuple[str, bool]:
     metric_map = {metric.metric_id: metric for metric in project_metrics(project.project_id)}
     group_metrics = [metric_map[metric_id] for metric_id in metric_ids if metric_id in metric_map]
+    if target_value is not None and len(group_metrics) > 1:
+        has_value = any(metric_current(project, metric) is not None for metric in group_metrics)
+        if not has_value:
+            return "입력 대기", True
+        current_total = sum(metric_current(project, metric) or 0.0 for metric in group_metrics)
+        display_unit = unit_text or group_metrics[0].unit
+        return format_metric_value(current_total, display_unit, compact=True), False
+
     if len(group_metrics) > 1 and len({metric.unit for metric in group_metrics}) == 1:
         has_value = any(metric_current(project, metric) is not None for metric in group_metrics)
         if not has_value:
@@ -2665,8 +2725,16 @@ def display_group_actual_text(
 
 def display_metric_groups(project: EmergencyProject) -> list[tuple[str, str, str, str, bool]]:
     rows: list[tuple[str, str, str, str, bool]] = []
-    for label, metric_ids, target_text, unit_text, _target_value in display_metric_specs(project.project_id):
-        current_text, waiting = display_group_actual_text(project, metric_ids)
+    for label, metric_ids, target_text, unit_text, target_value in display_metric_specs(project.project_id):
+        current_text, waiting = display_group_actual_text(project, metric_ids, unit_text, target_value)
+        rows.append((label, target_text, unit_text, current_text, waiting))
+    return rows
+
+
+def detail_metric_groups(project: EmergencyProject) -> list[tuple[str, str, str, str, bool]]:
+    rows: list[tuple[str, str, str, str, bool]] = []
+    for label, metric_ids, target_text, unit_text, target_value in detail_metric_specs(project.project_id):
+        current_text, waiting = display_group_actual_text(project, metric_ids, unit_text, target_value)
         rows.append((label, target_text, unit_text, current_text, waiting))
     return rows
 
@@ -2740,7 +2808,7 @@ def display_card_detail_popover_html(
     progress: float,
 ) -> str:
     metric_rows: list[str] = []
-    for label, target_text, unit_text, current_text, waiting in display_metric_groups(project):
+    for label, target_text, unit_text, current_text, waiting in detail_metric_groups(project):
         waiting_class = " is-waiting" if waiting else ""
         unit_markup = f'<em>단위: {safe_text(unit_text)}</em>' if unit_text else ""
         metric_rows.append(
