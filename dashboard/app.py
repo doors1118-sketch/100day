@@ -273,11 +273,11 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
     EmergencyProject(
         "P002",
         2,
-        "소상공인 에너지 바우처 지급, 공공요금·지방세 부담 완화",
+        "소상공인 에너지바우처 지급",
         "소상공인 경영개선 지원",
-        "중소상공인지원과\n경제정책과\n세정운영담당관",
+        "중소상공인지원과",
         "560억원",
-        "연매출 10억원 이하 소상공인 에너지 바우처 지급, 공공요금 7종 동결 및 지방세 세정지원",
+        "연매출 10억원 이하 소상공인 대상 에너지 바우처 지급",
         "2026.6.~ 사업계획 수립·지급시스템 검토, 2026.9. 추경 확보 및 조례 개정, 2026.10.~ 바우처 지급",
     ),
     EmergencyProject(
@@ -2716,8 +2716,6 @@ def render_project_compact_card(project: EmergencyProject) -> str:
     field_group = PROJECT_FIELD_GROUPS.get(project.project_id, project.field)
     field_class = PROJECT_FIELD_CLASSES.get(field_group, "field-default")
     title_markup = safe_text(project.title)
-    if project.project_id == "P002":
-        title_markup = "소상공인 에너지바우처 지급<br><span class=\"project-title-sub\">공공요금·지방세 부담 완화</span>"
     return f"""
       <article class="project-compact-card project-{safe_text(project.project_id)} {safe_text(field_class)}" tabindex="0" aria-label="{safe_text(project.title)} 상세 보기">
         <h3><span>{safe_text(number_mark)}</span><strong>{title_markup}</strong></h3>
