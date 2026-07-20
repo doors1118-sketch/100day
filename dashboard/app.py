@@ -3075,7 +3075,10 @@ def render_project_display_board(projects: list[EmergencyProject]) -> None:
             <div class="display-hero-brand">
               <span>미래 대전환의 중심</span>
               <strong>해양수도 부산</strong>
-              <a class="display-hero-tab" href="?view=economy">민생100일 경제 상황판</a>
+              <a class="display-hero-tab" href="?view=economy" aria-label="민생100일 경제 상황판으로 이동">
+                <span>민생100일 경제 상황판</span>
+                <span class="display-hero-tab-arrow" aria-hidden="true">&gt;</span>
+              </a>
             </div>
           </div>
           <div class="display-card-zone">
@@ -8020,25 +8023,50 @@ def inject_css() -> None:
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          min-height: 30px;
-          margin-top: 8px;
-          padding: 0 14px;
+          gap: 9px;
+          min-height: 36px;
+          margin-top: 10px;
+          padding: 0 7px 0 17px;
           border-radius: 999px;
-          border: 1px solid rgba(255, 255, 255, 0.58);
-          background: rgba(255, 255, 255, 0.18);
-          color: #fff;
-          font-size: 13px;
-          font-weight: 900;
+          border: 2px solid rgba(255, 255, 255, 0.82);
+          background: linear-gradient(135deg, #ffe55f 0%, #ffb000 58%, #ff7a00 100%);
+          color: #07142b;
+          font-size: 14px;
+          font-weight: 950;
           line-height: 1;
           text-decoration: none;
           white-space: nowrap;
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
-          backdrop-filter: blur(8px);
+          text-shadow: none;
+          box-shadow:
+            0 0 0 3px rgba(255, 219, 74, 0.16),
+            0 10px 24px rgba(0, 0, 0, 0.24),
+            0 0 22px rgba(255, 213, 64, 0.44);
+          cursor: pointer;
+          transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+        }
+
+        .display-hero-tab-arrow {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 25px;
+          height: 25px;
+          border-radius: 999px;
+          background: #07142b;
+          color: #fff;
+          font-size: 18px;
+          font-weight: 950;
+          line-height: 1;
         }
 
         .display-hero-tab:hover {
-          background: rgba(255, 255, 255, 0.28);
-          color: #fff;
+          color: #07142b;
+          filter: brightness(1.04);
+          transform: translateY(-1px);
+          box-shadow:
+            0 0 0 4px rgba(255, 219, 74, 0.22),
+            0 14px 30px rgba(0, 0, 0, 0.30),
+            0 0 28px rgba(255, 213, 64, 0.58);
         }
 
         .display-card-zone {
