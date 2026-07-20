@@ -3075,6 +3075,7 @@ def render_project_display_board(projects: list[EmergencyProject]) -> None:
             <div class="display-hero-brand">
               <span>미래 대전환의 중심</span>
               <strong>해양수도 부산</strong>
+              <a class="display-hero-tab" href="?view=economy">민생100일 경제 상황판</a>
             </div>
           </div>
           <div class="display-card-zone">
@@ -8013,6 +8014,31 @@ def inject_css() -> None:
 
         .display-hero-brand {
           margin-top: 30px;
+        }
+
+        .display-hero-tab {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 30px;
+          margin-top: 8px;
+          padding: 0 14px;
+          border-radius: 999px;
+          border: 1px solid rgba(255, 255, 255, 0.58);
+          background: rgba(255, 255, 255, 0.18);
+          color: #fff;
+          font-size: 13px;
+          font-weight: 900;
+          line-height: 1;
+          text-decoration: none;
+          white-space: nowrap;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+          backdrop-filter: blur(8px);
+        }
+
+        .display-hero-tab:hover {
+          background: rgba(255, 255, 255, 0.28);
+          color: #fff;
         }
 
         .display-card-zone {
