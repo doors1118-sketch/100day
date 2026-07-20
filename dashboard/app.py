@@ -7975,6 +7975,24 @@ def inject_css() -> None:
           background: #e6f1ff;
         }
 
+        .main .block-container:has(.display-board-page),
+        div[data-testid="stAppViewContainer"] .block-container:has(.display-board-page) {
+          padding-top: 0 !important;
+          padding-bottom: 0 !important;
+        }
+
+        div[data-testid="stVerticalBlock"]:has(.display-board-page) {
+          gap: 0 !important;
+        }
+
+        div[data-testid="stVerticalBlock"]:has(.display-board-page) > .element-container:not(:has(.display-board-page)) {
+          min-height: 0 !important;
+          height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+        }
+
         .display-hero {
           min-height: 152px;
           grid-template-columns: minmax(560px, 1fr) minmax(320px, 420px) 250px;
