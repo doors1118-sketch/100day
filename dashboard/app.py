@@ -8318,19 +8318,19 @@ def inject_css() -> None:
         }
 
         .display-project-card h3 {
-          min-height: 52px;
-          max-height: 52px;
-          margin-bottom: 4px;
+          min-height: 58px;
+          max-height: 58px;
+          margin-bottom: 2px;
           color: #09083b;
           font-size: clamp(20px, 1.28vw, 25px);
-          line-height: 1.18;
+          line-height: 1.14;
           letter-spacing: -0.06em;
         }
 
         .display-card-gauge {
-          width: 168px;
-          height: 84px;
-          margin: 2px auto 6px;
+          width: 164px;
+          height: 82px;
+          margin: 0 auto 4px;
         }
 
         .display-card-gauge::after {
