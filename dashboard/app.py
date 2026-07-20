@@ -7977,7 +7977,7 @@ def inject_css() -> None:
 
         .main .block-container:has(.display-board-page),
         div[data-testid="stAppViewContainer"] .block-container:has(.display-board-page) {
-          padding-top: 0 !important;
+          padding-top: 10px !important;
           padding-bottom: 0 !important;
         }
 
