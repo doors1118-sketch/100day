@@ -465,6 +465,15 @@ DISPLAY_METRIC_GROUPS = {
             4_850,
         ),
     ),
+    "P010": (
+        ("1단계 TF 구성(1회)/특사경 지명(1회)", ("tf_staff_count",), "총 2회(7월~)", "회"),
+        (
+            "2단계 정식 직제화(1회)/수사활동(단속·합동점검 5회)",
+            ("formal_team_staff_count",),
+            "총 6회(7~10월)",
+            "회",
+        ),
+    ),
 }
 
 
@@ -544,8 +553,14 @@ PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
         ProjectMetric("application_cost_cases", "비용 지원건수", "건", 100, "100건"),
     ),
     "P010": (
-        ProjectMetric("tf_staff_count", "1단계 TF 구성 인원", "명", 2, "2명(7월~)", True),
-        ProjectMetric("formal_team_staff_count", "2단계 민생경제수사팀 신설 인원", "명", 6, "총 6명(9~10월)"),
+        ProjectMetric("tf_staff_count", "1단계 TF 구성(1회)/특사경 지명(1회)", "회", 2, "총 2회(7월~)", True),
+        ProjectMetric(
+            "formal_team_staff_count",
+            "2단계 정식 직제화(1회)/수사활동(단속·합동점검 5회)",
+            "회",
+            6,
+            "총 6회(7~10월)",
+        ),
     ),
 }
 
