@@ -72,6 +72,25 @@ def disable_browser_translation() -> None:
     )
 
 
+def schedule_client_refresh(interval_seconds: int = 600) -> None:
+    components.html(
+        f"""
+        <script>
+        try {{
+          const parentWindow = window.parent;
+          if (parentWindow.__minsaeng100RefreshTimer) {{
+            parentWindow.clearTimeout(parentWindow.__minsaeng100RefreshTimer);
+          }}
+          parentWindow.__minsaeng100RefreshTimer = parentWindow.setTimeout(() => {{
+            parentWindow.location.reload();
+          }}, {int(interval_seconds) * 1000});
+        }} catch (err) {{}}
+        </script>
+        """,
+        height=0,
+    )
+
+
 @st.cache_data(ttl=300)
 def load_catalog() -> pd.DataFrame:
     with CATALOG_PATH.open("r", encoding="utf-8") as fp:
@@ -9159,6 +9178,9 @@ credit_df, policy_df = load_manual_tables()
 import_runs_df = load_import_runs()
 countdown_label, countdown_status = minsaeng_countdown()
 current_view = active_view()
+
+if current_view in {"economy", "check_display"}:
+    schedule_client_refresh()
 
 if current_view not in {"check", "check_display"}:
     st.markdown(
