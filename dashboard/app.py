@@ -800,6 +800,15 @@ def format_period(value: Any) -> str:
     return text
 
 
+def format_trend_period(value: Any) -> str:
+    if is_missing(value):
+        return "기준 없음"
+    text = str(value)
+    if len(text) >= 10 and text[4] in ["-", "."] and text[7] in ["-", "."]:
+        return f"{text[:4]}-{text[5:7]}-{text[8:10]}"
+    return format_period(value)
+
+
 def format_value(value: Any, unit: str) -> str:
     if is_missing(value):
         return "자료대기"
@@ -853,7 +862,9 @@ def short_period_label(label: str) -> str:
     if "-" in text:
         parts = text.split("-")
         if len(parts) >= 3:
-            return f"{parts[1]}/{parts[2]}"
+            month = str(int(parts[1])) if parts[1].isdigit() else parts[1]
+            day = str(int(parts[2])) if parts[2].isdigit() else parts[2]
+            return f"{month}/{day}"
         return text[-5:].replace("-", ".")
     if "." in text:
         month = text.split(".")[-1]
@@ -1006,7 +1017,7 @@ def recent_points_for_indicator(observations: pd.DataFrame, indicator_id: str, r
     points: list[tuple[str, float]] = []
     for _, row in rows.iterrows():
         if not is_missing(row["value"]):
-            points.append((format_period(row["base_period"]), float(row["value"])))
+            points.append((format_trend_period(row["base_period"]), float(row["value"])))
     return points
 
 
