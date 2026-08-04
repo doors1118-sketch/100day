@@ -8770,10 +8770,9 @@ def inject_css() -> None:
 
         .display-stage-point.is-current::after {
           content: "현재";
-          position: absolute;
-          left: 50%;
-          top: -29px;
-          transform: translateX(-50%);
+          position: static;
+          display: table;
+          margin: 2px auto 0;
           padding: 1px 4px;
           border-radius: 999px;
           background: var(--accent);
@@ -8856,8 +8855,8 @@ def inject_css() -> None:
         }
 
         .display-card-primary-stages {
-          min-height: 31px;
-          margin: 0 1px 5px;
+          min-height: 38px;
+          margin: 0 1px 2px;
         }
 
         .display-card-primary-stages .display-stage-track {
