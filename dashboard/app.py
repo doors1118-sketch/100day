@@ -7597,21 +7597,6 @@ def inject_css() -> None:
           overflow: hidden;
         }
 
-        .display-project-card.project-p008 h3,
-        .display-project-card.project-p010 h3 {
-          display: block;
-          width: calc(100% + 10px);
-          margin-right: -5px;
-          margin-left: -5px;
-          padding-top: 2px;
-          font-size: 13px;
-          line-height: 1.2;
-          letter-spacing: 0;
-          white-space: nowrap;
-          text-overflow: clip;
-          -webkit-line-clamp: unset;
-        }
-
         .display-project-card.project-p007 h3 {
           font-size: 19px;
           letter-spacing: 0;
@@ -8839,15 +8824,6 @@ def inject_css() -> None:
           font-size: clamp(17px, 1.08vw, 21px);
           line-height: 1.12;
           letter-spacing: -0.045em;
-        }
-
-        .mode-progress-focus .display-project-card.project-p008 h3,
-        .mode-progress-focus .display-project-card.project-p010 h3 {
-          min-height: 48px;
-          max-height: 48px;
-          padding-top: 6px;
-          font-size: 13px;
-          line-height: 1.1;
         }
 
         .mode-progress-focus .display-card-progress-gauge {
