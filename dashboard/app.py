@@ -8078,6 +8078,18 @@ def inject_css() -> None:
           padding-bottom: 0 !important;
         }
 
+        .element-container:has(.display-board-page) {
+          width: 100vw !important;
+          max-width: none !important;
+          margin-left: calc(50% - 50vw) !important;
+          margin-right: calc(50% - 50vw) !important;
+        }
+
+        .stHtml:has(.display-board-page) {
+          width: 100% !important;
+          max-width: none !important;
+        }
+
         div[data-testid="stVerticalBlock"]:has(.display-board-page) {
           gap: 0 !important;
         }
