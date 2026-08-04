@@ -17,6 +17,7 @@ data/manual/*.xls
 logs/
 *.log
 backups/
+artifacts/
 *.xlsx
 *.xls
 *.docx

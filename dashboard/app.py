@@ -282,12 +282,12 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
     EmergencyProject(
         "P001",
         1,
-        "경영위기 소상공인 1% 저리대출",
+        "소상공인 1%대 저리대출",
         "소상공인 경영개선 지원",
         "경제정책과",
         "1조 2,000억원",
         "부산시 소재 소상공인 최대 1억원 대출보증, 최초 1년간 실부담이자 1.0%",
-        "2026.6.~8. 추진계획 수립·MOU 체결·전산 개발, 2026.9. 추경 확보 후 자금지원 공고 및 접수",
+        "계획 수립, 전산 개발, 추경 확보, MOU 체결 후 자금지원",
     ),
     EmergencyProject(
         "P002",
@@ -297,17 +297,17 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         "중소상공인지원과",
         "560억원",
         "연매출 10억원 이하 소상공인 대상 에너지 바우처 지급",
-        "2026.6.~ 사업계획 수립·지급시스템 검토, 2026.9. 추경 확보 및 조례 개정, 2026.10.~ 바우처 지급",
+        "시스템 검토, 추진계획 수립, 조례 개정·추경 확보, 사업공고 후 바우처 지급",
     ),
     EmergencyProject(
         "P003",
         3,
-        "화물차주·택배 종사자 등 특별 지원",
+        "영세 화물차주 택배종사자 특별지원",
         "소상공인 경영개선 지원",
         "트라이포트기획과\n일자리노동과",
         "468.45억원",
         "화물차 유가연동보조금 추가 지원, 차량보험료 지원, 배달종사자 산재보험료 지원",
-        "2026.6.~7. 관련기관 협의 및 세부계획 수립, 2026.9. 추경 확보 후 홍보·신청접수·지원금 지급",
+        "기관 협의, 추진계획 수립, 시스템 구축, 추경 확보, 신청접수 후 지원금 지급",
     ),
     EmergencyProject(
         "P004",
@@ -317,7 +317,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         "중소상공인지원과",
         "14.5억원",
         "동백전 QR 가맹점 집중 확대와 연매출 10억원 이하 가맹점 카드수수료 0.15% 하향",
-        "2026.7.~12. QR 가맹점 확대, 2026.7.~8. 시스템 개발, 2026.9. 추경 확보 및 조례 개정, 2026.10.~12. 수수료 감면",
+        "QR 확대 추진, 시스템 개발, 추경 확보, 조례 개정 후 수수료 감면",
     ),
     EmergencyProject(
         "P005",
@@ -327,17 +327,17 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         "중소상공인지원과",
         "513억원",
         "동백전 캐시백률 5% 상향과 요일·업종별 특화 캐시백 운영",
-        "2026.7.~ 국비 지원비율 및 추가지원 건의·하반기 계획 수립, 2026.9. 추경 확보 및 캐시백 정책 발표, 2026.9.~12. 상향 캐시백 적용",
+        "계획 수립, 시스템 준비, 추경 확보 후 정책발표 및 캐시백 적용",
     ),
     EmergencyProject(
         "P006",
         6,
-        "소비활력 쿠폰 지급",
+        "소비활력쿠폰 지급",
         "시민부담 경감 및 상권활성화",
         "중소상공인지원과\n경제정책과",
         "150억원",
         "공공배달서비스 할인쿠폰과 동백전 QR 결제 전용 소비활력 쿠폰 지급",
-        "2026.7. 사업계획 수립, 2026.9. 추경 확보 및 조례 개정, 2026.9.~12. 소비활력 쿠폰 지급",
+        "사전협의, 계획 수립, 전산 개발, 추경 확보 후 쿠폰 발급",
     ),
     EmergencyProject(
         "P007",
@@ -347,7 +347,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         "중소상공인지원과",
         "5억원",
         "1~2개 권역 내 빈 점포를 활용해 임차료·인테리어·운영비를 지원하고 민생상권 회복 추진",
-        "2026.7. 사업계획 수립·공실점포 DB 구축, 2026.7.~8. 건물주 협약, 2026.9.~11. 시범사업 추진, 2026.12. 성과 발표",
+        "예산 확보, 현장 조사, 건물주 협의, 입주자 모집 후 점포 조성·운영",
     ),
     EmergencyProject(
         "P008",
@@ -357,7 +357,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         "일자리노동과\n노인복지과\n장애인복지과",
         "68.3억원",
         "공공근로형 민생지킴이 추가 운영 등 취약계층 공공일자리 30% 이상 확대",
-        "2026.7. 수요기관 발굴 및 세부계획 수립, 2026.8.~9. 추경 확보, 2026.9. 사업비 교부 및 참여자 선발, 2026.10.~12. 확대 운영",
+        "사업 발굴·유관기관 협의, 사업계획 수립, 추경예산 확보, 참여자 모집·선발 후 사업 운영",
     ),
     EmergencyProject(
         "P009",
@@ -367,7 +367,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         "중소상공인지원과",
         "4억원",
         "파산·회생·채무조정 등 상담부터 신청·접수·후속지원까지 원스톱 패스트트랙 구축",
-        "2026.7.~ 사업계획 수립·MOU 체결, 2026.7.~10. 이동버스 운영·현장상담·홍보, 2026.11.~12. 심층상담·후속조치",
+        "기관 협의, 계획 수립, MOU 체결, 추경 확보, 원스톱서비스 후 후속조치",
     ),
     EmergencyProject(
         "P010",
@@ -377,22 +377,69 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         "특별사법경찰과\n(경제정책과)",
         "비예산",
         "불법사금융·불법고금리·불법추심 등 민생경제 범죄 수사체계 구축",
-        "2026.7.~ 민생경제수사TF 구성·특사경 지명 및 업무 개시, 2026.9.~ 민생경제수사팀 신설",
+        "TF 구성, 특사경 지명, 팀 신설 후 단속·합동점검",
     ),
 ]
 
 
 PROJECT_STAGE_MAP: dict[str, tuple[str, ...]] = {
-    "P001": ("MOU 체결", "전산개발", "추경확보", "공고·접수", "대출공급"),
-    "P002": ("시스템 검토", "추경확보", "조례개정", "신청접수", "바우처 지급"),
-    "P003": ("기관협의", "세부계획", "추경확보", "신청접수", "지원금 지급"),
-    "P004": ("QR 확대", "시스템 개발", "추경확보", "조례개정", "수수료 감면"),
-    "P005": ("하반기 계획", "추경확보", "정책발표", "캐시백 적용"),
-    "P006": ("사업계획", "추경확보", "조례개정", "쿠폰 발급", "쿠폰 사용"),
-    "P007": ("DB 구축", "건물주 협약", "입주자 선정", "점포 조성", "운영"),
-    "P008": ("수요기관 발굴", "추경확보", "참여자 선발", "일자리 운영"),
-    "P009": ("MOU 체결", "이동상담", "원스톱 서비스", "후속조치"),
+    "P001": ("계획 수립", "전산 개발", "추경확보", "MOU 체결", "자금지원"),
+    "P002": ("시스템검토", "추진계획수립", "조례개정·추경확보", "사업공고", "바우처지급"),
+    "P003": ("기관협의", "추진계획", "시스템구축", "추경확보", "신청접수", "지원금 지급"),
+    "P004": ("QR확대 추진", "시스템 개발 개시", "추경 확보", "조례 개정", "수수료감면 추진 개시"),
+    "P005": ("계획수립", "시스템 준비", "추경확보", "정책발표·캐시백 적용"),
+    "P006": ("사전협의", "계획수립", "전산개발", "추경확보", "쿠폰발급"),
+    "P007": ("예산 확보", "현장 조사", "건물주 협의", "입주자 모집", "점포 조성·운영"),
+    "P008": ("사업 발굴·기관협의", "사업계획 수립", "추경예산 확보", "참여자 모집·선발", "사업 운영"),
+    "P009": ("기관협의", "계획수립", "MOU 체결", "추경확보", "원스톱서비스", "후속조치"),
     "P010": ("TF 구성", "특사경 지명", "팀 신설", "단속·합동점검"),
+}
+
+PROJECT_STAGE_ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
+    "P001": {
+        "전산 개발": ("전산개발",),
+        "자금지원": ("대출공급",),
+    },
+    "P002": {
+        "시스템검토": ("시스템 검토",),
+        "사업공고": ("신청접수",),
+        "바우처지급": ("바우처 지급",),
+    },
+    "P003": {
+        "추진계획": ("세부계획",),
+    },
+    "P004": {
+        "QR확대 추진": ("QR 확대",),
+        "시스템 개발 개시": ("시스템 개발",),
+        "추경 확보": ("추경확보",),
+        "조례 개정": ("조례개정",),
+        "수수료감면 추진 개시": ("수수료 감면", "수수료감면 개시"),
+    },
+    "P005": {
+        "계획수립": ("하반기 계획",),
+        "정책발표·캐시백 적용": ("정책발표", "캐시백 적용"),
+    },
+    "P006": {
+        "계획수립": ("사업계획",),
+        "쿠폰발급": ("쿠폰 발급",),
+    },
+    "P007": {
+        "현장 조사": ("DB 구축",),
+        "건물주 협의": ("건물주 협약",),
+        "입주자 모집": ("입주자 선정",),
+        "점포 조성·운영": ("점포 조성", "운영"),
+    },
+    "P008": {
+        "사업 발굴·기관협의": ("수요기관 발굴",),
+        "참여자 모집·선발": ("참여자 선발",),
+        "사업 운영": ("일자리 운영",),
+    },
+    "P009": {
+        "원스톱서비스": ("원스톱 서비스", "이동상담"),
+    },
+    "P010": {
+        "특사경 지명": ("특사경 지정",),
+    },
 }
 
 STAGE_STATE_OPTIONS = ("준비중", "추진중", "추진완료", "취소")
@@ -446,33 +493,28 @@ PROJECT_FIELD_CLASSES = {
 
 
 DISPLAY_PROJECT_TITLES = {
-    "P001": "소상공인 1% 저리대출",
+    "P001": "소상공인 1%대 저리대출",
     "P002": "소상공인 에너지바우처 지급",
-    "P003": "영세 화물차주·택배종사자 특별지원",
+    "P003": "영세 화물차주 택배종사자 특별지원",
     "P004": "동백전 카드수수료 부담완화",
     "P005": "동백전 캐시백 15% 한시상향",
-    "P006": "소비활력 쿠폰지급",
+    "P006": "소비활력쿠폰 지급",
     "P007": "만원 임대료 1,000개 빈점포 활용 민생상권 회복",
     "P008": "공공근로형 민생지킴이 운영, 공공일자리 확대",
     "P009": "민생재기 원스톱 100일 프로젝트",
-    "P010": "특별사법경찰제도 조속 도입",
+    "P010": "민생금융범죄 특별사법경찰제도 조속 도입",
 }
 
 
 DISPLAY_METRIC_GROUPS = {
-    "P003": (
-        ("유가연동보조금(유가보조금 포함) 지급액", ("fuel_subsidy_amount",), "400억원", "만원"),
-        (
-            "차량보험료·산재보험료 지원대상",
-            ("truck_insurance_vehicles_triport", "truck_insurance_vehicles_jobs", "accident_insurance_people"),
-            "34,000대·명",
-            "대·명",
-            34_000,
-        ),
-    ),
     "P006": (
-        ("공공배달 쿠폰 지급액", ("delivery_coupon_amount",), "60억원", "만원"),
-        ("동백전 QR결제 쿠폰/비중", ("qr_coupon_amount", "qr_payment_share"), "20억원 / 14%", "만원, %"),
+        (
+            "배달쿠폰 매출액·매출건수 증가율",
+            ("delivery_sales_growth_pct", "delivery_order_growth_pct"),
+            "각 200%",
+            "%",
+        ),
+        ("동백전 쿠폰 결제비중·사용액", ("qr_payment_share", "qr_coupon_amount"), "14% / 20억원", "%, 만원"),
     ),
     "P008": (
         ("민생지킴이 투입 인원", ("guardian_people_jobs",), "500명", "명"),
@@ -497,13 +539,6 @@ DISPLAY_METRIC_GROUPS = {
 
 
 DETAIL_METRIC_GROUPS = {
-    "P003": (
-        ("유가연동보조금(유가보조금 포함) 지급액", ("fuel_subsidy_amount",), "400억원", "만원"),
-        ("화물자동차 보험료 지원대수(트라이포트기획과)", ("truck_insurance_vehicles_triport",), "부서별 확인 필요", "대"),
-        ("화물자동차 보험료 지원대수(일자리노동과)", ("truck_insurance_vehicles_jobs",), "부서별 확인 필요", "대"),
-        ("플랫폼 노동자 산재보험료 지원 인원", ("accident_insurance_people",), "4,000명", "명"),
-        ("플랫폼 노동자 산재보험료 지원액", ("accident_insurance_amount",), "8.45억원", "만원"),
-    ),
     "P008": (
         ("민생지킴이 투입 인원(일자리노동과)", ("guardian_people_jobs",), "500명", "명"),
         ("공공일자리 투입 인원(노인복지과)", ("public_job_people_senior",), "4,500명", "명"),
@@ -515,51 +550,33 @@ DETAIL_METRIC_GROUPS = {
 
 PROJECT_METRIC_MAP: dict[str, tuple[ProjectMetric, ...]] = {
     "P001": (
-        ProjectMetric("loan_amount", "대출실행금액", "만원", 120_000_000, "1조 2,000억원", True),
-        ProjectMetric("beneficiary_count", "지원 소상공인 수", "명", 40_000, "40,000명"),
+        ProjectMetric("loan_amount", "자금지원액", "만원", 120_000_000, "1조 2,000억원", True),
     ),
     "P002": (
-        ProjectMetric("voucher_amount", "바우처 지급액", "만원", 5_600_000, "560억원", True),
-        ProjectMetric("voucher_places", "바우처 지급 개소", "개소", 280_000, "28만개소"),
+        ProjectMetric("voucher_amount", "지급액", "만원", 5_600_000, "560억원", True),
+        ProjectMetric("voucher_places", "지급 개소", "개소", 280_000, "28만개소"),
     ),
     "P003": (
-        ProjectMetric("fuel_subsidy_amount", "유가연동보조금(유가보조금 포함) 지급액", "만원", 4_000_000, "400억원", True),
-        ProjectMetric(
-            "truck_insurance_vehicles_triport",
-            "화물자동차 보험료 지원대수(트라이포트기획과)",
-            "대",
-            None,
-            "부서별 확인 필요",
-        ),
-        ProjectMetric(
-            "truck_insurance_vehicles_jobs",
-            "화물자동차 보험료 지원대수(일자리노동과)",
-            "대",
-            None,
-            "부서별 확인 필요",
-        ),
-        ProjectMetric("accident_insurance_amount", "플랫폼 노동자 산재보험료 지원액", "만원", 84_500, "8.45억원"),
-        ProjectMetric("accident_insurance_people", "플랫폼 노동자 산재보험료 지원 인원", "명", 4_000, "4,000명"),
+        ProjectMetric("accident_insurance_amount", "보험료 지원금", "만원", 80_000, "80,000만원", True),
+        ProjectMetric("accident_insurance_people", "지원 플랫폼 노동자 수", "명", 4_000, "4,000명"),
     ),
     "P004": (
-        ProjectMetric("qr_merchant_increase", "QR 등록 가맹점 증가 수", "개소", 4_000, "+4,000개소", True),
-        ProjectMetric("fee_reduction_amount", "카드결제 수수료 감면액", "만원", 125_000, "12.5억원"),
-        ProjectMetric("fee_reduction_merchants", "수수료 감면 적용 가맹점 수", "개소", 140_000, "14만개소"),
+        ProjectMetric("qr_merchant_increase", "QR등록 가맹점 수", "개소", 40_000, "40,000개소", True),
+        ProjectMetric("fee_reduction_amount", "수수료감면액", "만원", 125_000, "12.5억원"),
     ),
     "P005": (
-        ProjectMetric("dongbaek_issue_amount", "동백전 발행액", "만원", 200_000_000, "2조원", True),
-        ProjectMetric("cashback_amount", "상향 캐시백 집행액", "만원", 5_130_000, "513억원"),
-        ProjectMetric("cashback_users", "캐시백 적용 이용자 수", "명", None, "부서 목표 입력"),
+        ProjectMetric("cashback_amount", "상향 캐시백 집행액", "만원", 5_130_000, "513억원", True),
+        ProjectMetric("dongbaek_issue_amount", "발행액", "만원", 200_000_000, "2조원"),
     ),
     "P006": (
-        ProjectMetric("delivery_coupon_amount", "공공배달 쿠폰 지급액", "만원", 600_000, "60억원", True),
-        ProjectMetric("qr_payment_share", "동백전 월간 QR결제 비중", "%", 14, "14%"),
-        ProjectMetric("qr_coupon_amount", "QR 결제 쿠폰 지급액", "만원", 200_000, "20억원"),
-        ProjectMetric("coupon_used_count", "쿠폰 사용 건수", "건", None, "부서 목표 입력"),
+        ProjectMetric("delivery_sales_growth_pct", "배달쿠폰 매출액 증가율", "%", 200, "200%", True),
+        ProjectMetric("delivery_order_growth_pct", "배달쿠폰 매출건수 증가율", "%", 200, "200%"),
+        ProjectMetric("qr_payment_share", "동백전 쿠폰 결제비중", "%", 14, "14%"),
+        ProjectMetric("qr_coupon_amount", "동백전 쿠폰 사용액", "만원", 200_000, "20억원"),
     ),
     "P007": (
-        ProjectMetric("vacant_store_count", "빈점포 입점 완료 개소", "개소", 50, "50개소", True),
-        ProjectMetric("vacant_store_setup_count", "빈점포 조성 개소", "개소", 50, "50개소"),
+        ProjectMetric("vacant_store_count", "임대인 상생 협약", "개소", 50, "50개소", True),
+        ProjectMetric("vacant_store_setup_count", "빈 점포 조성", "개소", 50, "50개소"),
     ),
     "P008": (
         ProjectMetric("guardian_people_jobs", "민생지킴이 투입 인원(일자리노동과)", "명", 500, "500명", True),
@@ -2121,6 +2138,16 @@ def project_stages(project_id: str) -> tuple[str, ...]:
     return PROJECT_STAGE_MAP.get(project_id, tuple(PROJECT_STATUS_OPTIONS))
 
 
+def canonical_project_stage(project_id: str, value: Any) -> str:
+    stage = "" if value is None or pd.isna(value) else str(value).strip()
+    if stage in project_stages(project_id):
+        return stage
+    for canonical, aliases in PROJECT_STAGE_ALIASES.get(project_id, {}).items():
+        if stage in aliases:
+            return canonical
+    return stage
+
+
 def normalize_budget_status(value: Any) -> str:
     status = "" if value is None or pd.isna(value) else str(value).strip()
     return status if status in BUDGET_STATUS_OPTIONS else DEFAULT_BUDGET_STATUS
@@ -2133,6 +2160,7 @@ def normalize_risk_level(value: Any) -> str:
 
 def stage_progress_pct(project_id: str, status: str) -> int:
     stages = project_stages(project_id)
+    status = canonical_project_stage(project_id, status)
     if not stages or status not in stages:
         return 0
     return int(round(((stages.index(status) + 1) / len(stages)) * 100))
@@ -2146,6 +2174,7 @@ def normalize_stage_state(value: Any) -> str:
 def sequential_stage_statuses(project_id: str, status: str) -> dict[str, str]:
     stages = project_stages(project_id)
     stage_statuses = {stage: "준비중" for stage in stages}
+    status = canonical_project_stage(project_id, status)
     if status not in stages:
         return stage_statuses
     current_index = stages.index(status)
@@ -2177,7 +2206,17 @@ def parse_stage_statuses(
             raw = {}
     if not raw:
         return sequential_stage_statuses(project_id, fallback_status)
-    return {stage: normalize_stage_state(raw.get(stage)) for stage in stages}
+    stage_aliases = PROJECT_STAGE_ALIASES.get(project_id, {})
+    normalized: dict[str, str] = {}
+    for stage in stages:
+        raw_value = raw.get(stage)
+        if raw_value is None:
+            for alias in stage_aliases.get(stage, ()):
+                if alias in raw:
+                    raw_value = raw[alias]
+                    break
+        normalized[stage] = normalize_stage_state(raw_value)
+    return normalized
 
 
 def stage_status_class(stage_state: str) -> str:
@@ -2876,13 +2915,6 @@ def display_group_actual_text(
         display_unit = unit_text or group_metrics[0].unit
         return format_metric_value(current_total, display_unit, compact=True), False
 
-    if len(group_metrics) > 1 and len({metric.unit for metric in group_metrics}) == 1:
-        has_value = any(metric_current(project, metric) is not None for metric in group_metrics)
-        if not has_value:
-            return "입력 대기", True
-        current_total = sum(metric_current(project, metric) or 0.0 for metric in group_metrics)
-        return format_metric_value(current_total, group_metrics[0].unit, compact=True), False
-
     values: list[str] = []
     has_value = False
     for metric_id in metric_ids:
@@ -3063,7 +3095,7 @@ def display_project_card(project: EmergencyProject) -> str:
     field_class = PROJECT_FIELD_CLASSES.get(field_group, "field-default")
     detail_popover = display_card_detail_popover_html(project, achievement, progress)
     return f"""
-      <article class="display-project-card {safe_text(field_class)}">
+      <article class="display-project-card {safe_text(field_class)} project-{safe_text(project.project_id.lower())}">
         <div class="display-card-field">
           <span aria-hidden="true"></span>
           <b>{safe_text(field_group)}</b>
@@ -7495,6 +7527,26 @@ def inject_css() -> None:
           height: 88px;
           margin: 0 auto 6px;
           overflow: hidden;
+        }
+
+        .display-project-card.project-p008 h3,
+        .display-project-card.project-p010 h3 {
+          display: block;
+          width: calc(100% + 10px);
+          margin-right: -5px;
+          margin-left: -5px;
+          padding-top: 2px;
+          font-size: 13px;
+          line-height: 1.2;
+          letter-spacing: 0;
+          white-space: nowrap;
+          text-overflow: clip;
+          -webkit-line-clamp: unset;
+        }
+
+        .display-project-card.project-p007 h3 {
+          font-size: 19px;
+          letter-spacing: 0;
         }
 
         .display-card-gauge::before,
