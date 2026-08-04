@@ -27,6 +27,10 @@ DB_PATH = Path(os.getenv("MINSAENG100_DB", APP_HOME / "data" / "minsaeng100.sqli
 PROJECT_HEADER_IMAGE_PATH = APP_HOME / "dashboard" / "assets" / "minsaeng100_check_header.png"
 MINSAENG_START_DATE = date(2026, 7, 1)
 MINSAENG_TOTAL_DAYS = 100
+PROGRESS_FOCUS_END_DATE = date(2026, 9, 1)
+SUPPLEMENTARY_BUDGET_PROJECT_IDS = frozenset(
+    {"P001", "P002", "P003", "P004", "P005", "P006", "P008", "P009"}
+)
 KOREA_TZ = ZoneInfo("Asia/Seoul")
 
 
@@ -345,7 +349,7 @@ EMERGENCY_PROJECTS: list[EmergencyProject] = [
         "1만원 임대료 1,000개 빈 점포 활용 민생상권 회복",
         "시민부담 경감 및 상권활성화",
         "중소상공인지원과",
-        "5억원",
+        "비예산",
         "1~2개 권역 내 빈 점포를 활용해 임차료·인테리어·운영비를 지원하고 민생상권 회복 추진",
         "예산 확보, 현장 조사, 건물주 협의, 입주자 모집 후 점포 조성·운영",
     ),
@@ -3087,13 +3091,57 @@ def display_card_detail_popover_html(
     """
 
 
-def display_project_card(project: EmergencyProject) -> str:
+def display_project_card(project: EmergencyProject, *, progress_focus: bool = False) -> str:
     title = DISPLAY_PROJECT_TITLES.get(project.project_id, project.title)
     progress = max(0.0, min(float(project.progress_pct), 100.0))
     achievement = display_achievement_pct(project)
     field_group = PROJECT_FIELD_GROUPS.get(project.project_id, project.field)
     field_class = PROJECT_FIELD_CLASSES.get(field_group, "field-default")
     detail_popover = display_card_detail_popover_html(project, achievement, progress)
+    supplementary_badge = (
+        '<span class="display-supplementary-badge">추경필요</span>'
+        if progress_focus and project.project_id in SUPPLEMENTARY_BUDGET_PROJECT_IDS
+        else ""
+    )
+    if progress_focus:
+        return f"""
+          <article class="display-project-card is-progress-focus {safe_text(field_class)} project-{safe_text(project.project_id.lower())}">
+            <div class="display-card-topline">
+              <div class="display-card-field">
+                <span aria-hidden="true"></span>
+                <b>{safe_text(field_group)}</b>
+              </div>
+              {supplementary_badge}
+            </div>
+            <h3>{safe_text(title)}</h3>
+            <div class="display-card-gauge display-card-progress-gauge" style="--pct:{progress:.2f}; --arc-deg:{max(progress, 12.0) * 1.8:.2f}deg;">
+              <div class="display-card-gauge-value">
+                <span>추진률(%)</span>
+                <strong>{progress:.1f}</strong>
+              </div>
+            </div>
+            <div class="display-card-primary-stages">
+              {display_stage_points_html(project)}
+            </div>
+            <div class="display-card-primary-meta">
+              <p><span>예산</span><b>{safe_text(project.budget)}</b></p>
+              <p><span>담당부서</span><b>{safe_text(project.department)}</b></p>
+            </div>
+            <div class="display-card-execution-panel">
+              <div class="display-card-execution-head">
+                <strong>집행 현황</strong>
+                <span>달성률 <b>{achievement:.1f}%</b></span>
+              </div>
+              <div class="display-card-achievement-bar" style="--pct:{achievement:.2f};">
+                <span></span>
+              </div>
+              <div class="display-card-metrics">
+                {display_metric_rows_html(project)}
+              </div>
+            </div>
+            {detail_popover}
+          </article>
+        """
     return f"""
       <article class="display-project-card {safe_text(field_class)} project-{safe_text(project.project_id.lower())}">
         <div class="display-card-field">
@@ -3128,16 +3176,25 @@ def display_project_card(project: EmergencyProject) -> str:
     """
 
 
+def use_progress_focus_layout(today: date | None = None) -> bool:
+    current_day = today or datetime.now(KOREA_TZ).date()
+    return current_day < PROGRESS_FOCUS_END_DATE
+
+
 def render_project_display_board(projects: list[EmergencyProject]) -> None:
     updates = load_project_updates()
     projects = apply_project_updates(projects, updates)
     avg_progress = overall_combined_progress_pct(projects)
+    progress_focus = use_progress_focus_layout()
     countdown_label, _countdown_status = minsaeng_countdown()
     display_countdown = countdown_label if countdown_label.startswith("D-") else "D-0"
-    cards_html = "\n".join(display_project_card(project) for project in projects)
+    cards_html = "\n".join(
+        display_project_card(project, progress_focus=progress_focus) for project in projects
+    )
+    board_mode_class = "mode-progress-focus" if progress_focus else "mode-achievement-focus"
     st.html(
         f"""
-        <section class="display-board-page notranslate" translate="no" lang="ko">
+        <section class="display-board-page {board_mode_class} notranslate" translate="no" lang="ko">
           <div class="display-hero">
             <div class="display-hero-copy">
               <h1>민생100일 비상조치 추진상황판</h1>
@@ -8730,6 +8787,232 @@ def inject_css() -> None:
         .display-stage-point.is-cancelled::before {
           border-color: #ef4444;
           background: #ef4444;
+        }
+
+        .mode-progress-focus .display-project-card {
+          height: 374px;
+          min-height: 374px;
+          padding: 12px 16px 11px;
+        }
+
+        .display-card-topline {
+          display: flex;
+          min-height: 18px;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+
+        .mode-progress-focus .display-card-field {
+          min-width: 0;
+          margin-bottom: 0;
+        }
+
+        .display-supplementary-badge {
+          display: inline-flex;
+          flex: 0 0 auto;
+          align-items: center;
+          justify-content: center;
+          min-height: 18px;
+          padding: 2px 7px;
+          border: 1px solid rgba(255, 255, 255, 0.7);
+          border-radius: 999px;
+          background: #ef4f58;
+          color: #fff;
+          font-size: 8px;
+          font-weight: 950;
+          line-height: 1;
+          letter-spacing: 0;
+          box-shadow: 0 4px 10px rgba(194, 42, 55, 0.2);
+          white-space: nowrap;
+        }
+
+        .mode-progress-focus .display-project-card h3 {
+          min-height: 48px;
+          max-height: 48px;
+          margin: 2px 0 0;
+          font-size: clamp(17px, 1.08vw, 21px);
+          line-height: 1.12;
+          letter-spacing: -0.045em;
+        }
+
+        .mode-progress-focus .display-project-card.project-p008 h3,
+        .mode-progress-focus .display-project-card.project-p010 h3 {
+          min-height: 48px;
+          max-height: 48px;
+          padding-top: 6px;
+          font-size: 13px;
+          line-height: 1.1;
+        }
+
+        .mode-progress-focus .display-card-progress-gauge {
+          width: 132px;
+          height: 66px;
+          margin: -1px auto 1px;
+        }
+
+        .mode-progress-focus .display-card-progress-gauge::after {
+          left: 20px;
+          right: 20px;
+          top: 20px;
+        }
+
+        .mode-progress-focus .display-card-progress-gauge .display-card-gauge-value {
+          bottom: -1px;
+        }
+
+        .mode-progress-focus .display-card-progress-gauge .display-card-gauge-value span {
+          font-size: 8px;
+        }
+
+        .mode-progress-focus .display-card-progress-gauge .display-card-gauge-value strong {
+          font-size: 30px;
+        }
+
+        .display-card-primary-stages {
+          min-height: 31px;
+          margin: 0 1px 5px;
+        }
+
+        .display-card-primary-stages .display-stage-track {
+          margin-top: 0;
+          padding-top: 7px;
+        }
+
+        .display-card-primary-stages .display-stage-labels {
+          margin-top: 4px;
+        }
+
+        .display-card-primary-stages .display-stage-point {
+          font-size: 7.1px;
+          line-height: 1.02;
+        }
+
+        .display-card-primary-meta {
+          display: grid;
+          min-height: 38px;
+          padding: 5px 8px;
+          border: 1px solid #dce8f4;
+          border-radius: 8px;
+          background: #f4f8fc;
+          box-sizing: border-box;
+        }
+
+        .display-card-primary-meta p {
+          display: grid;
+          grid-template-columns: 44px minmax(0, 1fr);
+          gap: 5px;
+          align-items: start;
+          min-width: 0;
+          margin: 0;
+          color: #62748c;
+          font-size: 8.2px;
+          font-weight: 850;
+          line-height: 1.08;
+        }
+
+        .display-card-primary-meta span {
+          color: #476786;
+          font-weight: 950;
+          white-space: nowrap;
+        }
+
+        .display-card-primary-meta b {
+          display: -webkit-box;
+          min-width: 0;
+          overflow: hidden;
+          color: #071b3b;
+          font-weight: 950;
+          line-height: 1.08;
+          white-space: pre-line;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+        }
+
+        .display-card-execution-panel {
+          min-height: 111px;
+          margin-top: 6px;
+          padding: 6px 8px 7px;
+          border: 1px solid color-mix(in srgb, var(--accent) 25%, #d5e6f5);
+          border-radius: 9px;
+          background: color-mix(in srgb, var(--accent) 7%, #f7fbff);
+          box-sizing: border-box;
+        }
+
+        .display-card-execution-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          min-height: 15px;
+          color: #183451;
+          font-size: 9px;
+          font-weight: 950;
+        }
+
+        .display-card-execution-head > strong {
+          color: #071b3b;
+          font-size: 10px;
+        }
+
+        .display-card-execution-head span {
+          color: #63758b;
+          white-space: nowrap;
+        }
+
+        .display-card-execution-head b {
+          color: var(--accent);
+          font-size: 11px;
+        }
+
+        .display-card-achievement-bar {
+          height: 5px;
+          margin: 3px 0 5px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #dce7f3;
+        }
+
+        .display-card-achievement-bar span {
+          display: block;
+          width: calc(var(--pct) * 1%);
+          height: 100%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, var(--accent), var(--accent-2));
+          transition: width 320ms ease;
+        }
+
+        .mode-progress-focus .display-card-execution-panel .display-card-metrics {
+          gap: 3px;
+          margin: 0;
+        }
+
+        .mode-progress-focus .display-card-execution-panel .display-metric-row {
+          min-height: 35px;
+        }
+
+        .mode-progress-focus .display-card-execution-panel .display-metric-title {
+          min-height: 12px;
+          margin-bottom: 1px;
+        }
+
+        .mode-progress-focus .display-card-execution-panel .display-metric-title strong {
+          font-size: 8.5px;
+        }
+
+        .mode-progress-focus .display-card-execution-panel .display-metric-title em {
+          font-size: 7px;
+        }
+
+        .mode-progress-focus .display-card-execution-panel .display-metric-values span {
+          font-size: 7px;
+        }
+
+        .mode-progress-focus .display-card-execution-panel .display-metric-values b,
+        .mode-progress-focus .display-card-execution-panel .display-metric-values p:last-child b,
+        .mode-progress-focus .display-card-execution-panel .display-metric-values b.is-waiting {
+          font-size: 11px;
+          letter-spacing: -0.04em;
         }
 
         div[data-testid="stDataFrame"] {
