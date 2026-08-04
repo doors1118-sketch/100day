@@ -2997,8 +2997,13 @@ def display_stage_points_html(project: EmergencyProject) -> str:
     progress_pct = max(0.0, min(100.0, float(project.progress_pct or 0.0)))
     current_index: int | None = None
     if progress_pct > 0:
-        stage_position = (progress_pct / 100.0) * max(len(stages) - 1, 0)
-        current_index = min(len(stages) - 1, int(math.floor(stage_position + 0.5)))
+        current_stage = representative_stage_status(
+            project.project_id,
+            stage_statuses,
+            project.status,
+        )
+        if current_stage in stages:
+            current_index = stages.index(current_stage)
 
     points: list[str] = []
     for index, label in enumerate(stages):
