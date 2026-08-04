@@ -2994,10 +2994,21 @@ def display_stage_points_html(project: EmergencyProject) -> str:
     if not stages:
         return ""
     stage_statuses = parse_stage_statuses(project.stage_statuses, project.project_id, project.status)
+    progress_pct = max(0.0, min(100.0, float(project.progress_pct or 0.0)))
+    current_index: int | None = None
+    if progress_pct > 0:
+        stage_position = (progress_pct / 100.0) * max(len(stages) - 1, 0)
+        current_index = min(len(stages) - 1, int(math.floor(stage_position + 0.5)))
+
     points: list[str] = []
-    for label in stages:
+    for index, label in enumerate(stages):
         state = normalize_stage_state(stage_statuses.get(label))
-        classes = ["display-stage-point", stage_status_class(state)]
+        classes = ["display-stage-point"]
+        if current_index is not None:
+            if index < current_index:
+                classes.append("is-passed")
+            elif index == current_index:
+                classes.append("is-current")
         points.append(
             f'<span class="{" ".join(classes)}" title="{safe_text(label)}: {safe_text(state)}">{safe_text(label)}</span>'
         )
@@ -8742,16 +8753,16 @@ def inject_css() -> None:
           height: 8px;
         }
 
-        .display-stage-point.is-done {
+        .display-stage-point.is-passed {
           color: var(--accent);
         }
 
-        .display-stage-point.is-active {
-          color: #9a5a00;
+        .display-stage-point.is-current {
+          color: var(--accent);
           font-weight: 950;
         }
 
-        .display-stage-point.is-done::before {
+        .display-stage-point.is-passed::before {
           width: 9px;
           height: 9px;
           border-color: var(--accent);
@@ -8759,34 +8770,28 @@ def inject_css() -> None:
           box-shadow: 0 0 0 3px rgba(37, 195, 189, 0.16);
         }
 
-        .display-stage-point.is-active::before {
+        .display-stage-point.is-current::before {
           width: 11px;
           height: 11px;
-          border-color: #fff;
-          background: #f5b400;
-          box-shadow: 0 0 0 4px rgba(245, 180, 0, 0.2);
+          border: 3px solid var(--accent);
+          background: #fff;
+          box-shadow: 0 0 0 4px rgba(37, 195, 189, 0.18);
         }
 
-        .display-stage-point.is-active::after {
-          content: "";
+        .display-stage-point.is-current::after {
+          content: "현재";
           position: absolute;
           left: 50%;
-          top: -21px;
-          width: 0;
-          height: 0;
+          top: -29px;
           transform: translateX(-50%);
-          border-left: 5px solid transparent;
-          border-right: 5px solid transparent;
-          border-top: 7px solid #f5b400;
-        }
-
-        .display-stage-point.is-cancelled {
-          color: #b42323;
-        }
-
-        .display-stage-point.is-cancelled::before {
-          border-color: #ef4444;
-          background: #ef4444;
+          padding: 1px 4px;
+          border-radius: 999px;
+          background: var(--accent);
+          color: #fff;
+          font-size: 6px;
+          font-weight: 950;
+          line-height: 1.15;
+          white-space: nowrap;
         }
 
         .mode-progress-focus .display-project-card {
